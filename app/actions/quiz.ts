@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { quiz, question, answer } from "@/lib/db/schema";
@@ -79,8 +80,12 @@ export async function createQuiz(data: QuizFormData) {
     revalidatePath("/");
     redirect(`/quiz/${newQuiz.id}`);
   } catch (error) {
+    // Re-throw redirect errors - they're not actual errors
+    if (isRedirectError(error)) {
+      throw error;
+    }
     console.error("Failed to create quiz:", error);
-    return { error: "Failed to create quiz" };
+    return { error: error instanceof Error ? error.message : "Failed to create quiz" };
   }
 }
 
@@ -159,8 +164,12 @@ export async function updateQuiz(quizId: string, data: QuizFormData) {
     revalidatePath(`/quiz/${quizId}`);
     redirect(`/quiz/${quizId}`);
   } catch (error) {
+    // Re-throw redirect errors - they're not actual errors
+    if (isRedirectError(error)) {
+      throw error;
+    }
     console.error("Failed to update quiz:", error);
-    return { error: "Failed to update quiz" };
+    return { error: error instanceof Error ? error.message : "Failed to update quiz" };
   }
 }
 
@@ -189,7 +198,11 @@ export async function deleteQuiz(quizId: string) {
     revalidatePath("/");
     redirect("/");
   } catch (error) {
+    // Re-throw redirect errors - they're not actual errors
+    if (isRedirectError(error)) {
+      throw error;
+    }
     console.error("Failed to delete quiz:", error);
-    return { error: "Failed to delete quiz" };
+    return { error: error instanceof Error ? error.message : "Failed to delete quiz" };
   }
 }

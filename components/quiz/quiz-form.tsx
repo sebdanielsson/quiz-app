@@ -98,11 +98,15 @@ export function QuizForm({
 
     try {
       const result = await onSubmit(formData);
-      if (result.error) {
+      if (result?.error) {
         setError(result.error);
+        console.error("Quiz form error:", result.error);
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      // Log detailed error for debugging
+      console.error("Quiz form submission error:", err);
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
