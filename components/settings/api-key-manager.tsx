@@ -238,7 +238,7 @@ export function ApiKeyManager() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4" />
-                <span className="ml-2 hidden sm:inline">Create Key</span>
+                <span className="ml-2 hidden sm:block">Create Key</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">

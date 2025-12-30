@@ -50,7 +50,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           <Button asChild>
             <Link href="/quiz/new">
               <Plus className="h-4 w-4" />
-              <span className="ml-2 hidden sm:inline">Create Quiz</span>
+              <span className="ml-2 hidden sm:block">Create Quiz</span>
             </Link>
           </Button>
         )}
