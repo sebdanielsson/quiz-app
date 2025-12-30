@@ -143,7 +143,7 @@ export function QuizForm({ initialData, onSubmit, submitLabel = "Create Quiz" }:
             <Input
               id="heroImageUrl"
               type="url"
-              value={formData.heroImageUrl}
+              value={formData.heroImageUrl ?? ""}
               onChange={(e) => updateField("heroImageUrl", e.target.value)}
               placeholder="https://example.com/image.jpg"
             />
@@ -196,10 +196,18 @@ export function QuizForm({ initialData, onSubmit, submitLabel = "Create Quiz" }:
             <Input
               id="publishedAt"
               type="datetime-local"
-              value={formData.publishedAt ? new Date(formData.publishedAt).toISOString().slice(0, 16) : ""}
-              onChange={(e) => updateField("publishedAt", e.target.value ? new Date(e.target.value) : null)}
+              value={
+                formData.publishedAt
+                  ? new Date(formData.publishedAt).toISOString().slice(0, 16)
+                  : ""
+              }
+              onChange={(e) =>
+                updateField("publishedAt", e.target.value ? new Date(e.target.value) : null)
+              }
             />
-            <p className="text-muted-foreground text-sm">If set to a future date, the published date won&apos;t be displayed until then.</p>
+            <p className="text-muted-foreground text-sm">
+              If set to a future date, the published date won&apos;t be displayed until then.
+            </p>
           </div>
         </CardContent>
       </Card>
