@@ -24,7 +24,7 @@ export default async function HomePage({ searchParams }: PageProps) {
   const { items: quizzes, totalPages, currentPage } = await getQuizzes(page);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Quizzes</h1>

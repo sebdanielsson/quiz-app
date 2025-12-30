@@ -48,7 +48,7 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
   };
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8">
       {/* Hero Section */}
       <div className="relative">
         {quiz.heroImageUrl && (

@@ -11,6 +11,7 @@ A modern, full-stack quiz application built with Next.js 16, featuring OIDC auth
 - ⏱️ **Timed Quizzes** — Optional time limits with timeout tracking
 - 🔄 **Randomization** — Shuffle questions for each attempt
 - 🔑 **API Keys** — Programmatic access with scoped permissions and rate limiting
+- 📖 **OpenAPI Docs** — Interactive API documentation with Scalar
 - 🌓 **Dark Mode** — System-aware theme switching
 
 ## Tech Stack
@@ -105,10 +106,11 @@ quiz-app/
 │   │       ├── new/      # Create quiz
 │   │       └── [id]/     # Quiz detail, edit, play, results
 │   ├── actions/          # Server actions
-│   └── api/              # REST API endpoints
-│       ├── auth/         # BetterAuth handler
-│       ├── leaderboard/  # Global leaderboard
-│       └── quizzes/      # Quiz CRUD + attempts + leaderboards
+│   ├── api/              # REST API endpoints
+│   │   ├── auth/         # BetterAuth handler
+│   │   ├── leaderboard/  # Global leaderboard
+│   │   └── quizzes/      # Quiz CRUD + attempts + leaderboards
+│   └── docs/             # OpenAPI documentation (Scalar)
 ├── components/
 │   ├── auth/             # Auth components
 │   ├── layout/           # Header, theme, pagination
@@ -118,6 +120,7 @@ quiz-app/
 └── lib/
     ├── auth/             # Auth configuration & helpers
     ├── db/               # Database schema & queries
+    ├── openapi.ts        # OpenAPI 3.1 specification
     └── validations/      # Zod schemas
 ```
 
@@ -147,6 +150,15 @@ Admins can create and manage API keys through the web UI at `/settings`. Each AP
 ### Rate Limiting
 
 API keys are rate-limited to **100 requests per minute** by default. When rate-limited, the API returns a `429 Too Many Requests` response.
+
+### API Documentation
+
+Interactive API documentation is available at [`/docs`](/docs) powered by [Scalar](https://scalar.com/). The documentation includes:
+
+- 📋 **Full endpoint reference** with request/response schemas
+- 🧪 **"Try it" functionality** to test endpoints directly in the browser
+- 📦 **Code snippets** in multiple languages (JavaScript, Python, cURL, etc.)
+- 🔐 **Authentication setup** for API key configuration
 
 ---
 
@@ -181,6 +193,7 @@ GET /api/quizzes
       "maxAttempts": 3,
       "timeLimitSeconds": 300,
       "randomizeQuestions": true,
+      "randomizeAnswers": true,
       "createdAt": "2025-01-01T00:00:00.000Z",
       "updatedAt": "2025-01-01T00:00:00.000Z",
       "questionCount": 10,
@@ -220,6 +233,7 @@ GET /api/quizzes/:id
   "maxAttempts": 3,
   "timeLimitSeconds": 300,
   "randomizeQuestions": true,
+  "randomizeAnswers": true,
   "createdAt": "2025-01-01T00:00:00.000Z",
   "updatedAt": "2025-01-01T00:00:00.000Z",
   "author": { ... },
@@ -259,6 +273,7 @@ POST /api/quizzes
   "maxAttempts": 3,
   "timeLimitSeconds": 300,
   "randomizeQuestions": true,
+  "randomizeAnswers": true,
   "questions": [
     {
       "text": "What does HTML stand for?",

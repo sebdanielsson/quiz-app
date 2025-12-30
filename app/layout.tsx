@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Quiz App",
   description: "Test your knowledge with interactive quizzes",
+  icons: {
+    icon: [
+      { url: "/icon_light.svg", media: "(prefers-color-scheme: light)" },
+      { url: "/icon_dark.svg", media: "(prefers-color-scheme: dark)" },
+    ],
+  },
 };
 
 export default function RootLayout({

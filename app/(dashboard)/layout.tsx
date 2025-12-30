@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
 import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({
@@ -15,22 +16,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="relative flex min-h-screen flex-col">
       <Header />
-      <main className="container mx-auto flex-1 py-6">{children}</main>
-      <footer className="border-t py-6 md:py-0">
-        <div className="text-muted-foreground container mx-auto flex h-14 items-center justify-center text-sm">
-          <span>
-            View source code on{" "}
-            <a
-              href="https://github.com/sebdanielsson/quiz-app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-black dark:text-white"
-            >
-              GitHub
-            </a>
-          </span>
-        </div>
-      </footer>
+      <main className="mx-auto w-full max-w-7xl px-4 py-6">{children}</main>
+      <Footer />
     </div>
   );
 }

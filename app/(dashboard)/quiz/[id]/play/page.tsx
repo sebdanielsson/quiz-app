@@ -54,7 +54,7 @@ export default async function PlayQuizPage({ params }: PageProps) {
     displayOrder: index,
   }));
 
-  // Randomize if enabled
+  // Randomize questions if enabled
   if (quiz.randomizeQuestions) {
     questions = shuffleArray(questions).map((q, index) => ({
       ...q,
@@ -62,11 +62,13 @@ export default async function PlayQuizPage({ params }: PageProps) {
     }));
   }
 
-  // Also shuffle answers within each question
-  questions = questions.map((q) => ({
-    ...q,
-    answers: shuffleArray(q.answers),
-  }));
+  // Randomize answers within each question if enabled
+  if (quiz.randomizeAnswers) {
+    questions = questions.map((q) => ({
+      ...q,
+      answers: shuffleArray(q.answers),
+    }));
+  }
 
   return (
     <QuizPlayer

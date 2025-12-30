@@ -76,7 +76,7 @@ export default async function ResultsPage({ params, searchParams }: PageProps) {
 
       {/* Score Card */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="py-6">
           <div className="space-y-4 text-center">
             <div className="bg-primary/10 inline-flex h-24 w-24 items-center justify-center rounded-full">
               <Trophy className="text-primary h-12 w-12" />

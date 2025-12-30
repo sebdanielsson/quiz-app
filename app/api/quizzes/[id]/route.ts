@@ -95,6 +95,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         maxAttempts: validData.maxAttempts,
         timeLimitSeconds: validData.timeLimitSeconds,
         randomizeQuestions: validData.randomizeQuestions,
+        randomizeAnswers: validData.randomizeAnswers,
         updatedAt: new Date(),
       })
       .where(eq(quiz.id, id))

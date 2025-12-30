@@ -21,7 +21,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
   const leaderboard = await getGlobalLeaderboard(page);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <div className="flex items-center gap-3">
         <Trophy className="h-8 w-8 text-yellow-500" />
         <div>

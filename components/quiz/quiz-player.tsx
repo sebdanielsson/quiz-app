@@ -64,14 +64,16 @@ export function QuizPlayer({
   const timeRemainingMs = hasTimeLimit ? Math.max(0, timeLimitSeconds * 1000 - elapsedMs) : null;
   const isTimedOut = hasTimeLimit && timeRemainingMs === 0;
 
-  // Timer effect
+  // Timer effect - pauses when showing feedback (between confirming answer and clicking next)
   useEffect(() => {
+    if (showFeedback) return; // Pause timer while reviewing answer
+
     const interval = setInterval(() => {
       setElapsedMs((prev) => prev + 100);
     }, 100);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [showFeedback]);
 
   // Auto-submit on timeout
   useEffect(() => {

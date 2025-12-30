@@ -26,6 +26,7 @@ export const quizSchema = z.object({
   maxAttempts: z.coerce.number().int().min(1, "At least 1 attempt required").default(1),
   timeLimitSeconds: z.coerce.number().int().min(0, "Time limit cannot be negative").default(0),
   randomizeQuestions: z.boolean().default(true),
+  randomizeAnswers: z.boolean().default(true),
   questions: z.array(questionSchema).min(1, "At least 1 question is required"),
 });
 

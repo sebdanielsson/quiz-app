@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Brain, Swords, Trophy } from "lucide-react";
+import { Book, Brain, Swords, Trophy } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { UserButton } from "@/components/auth/user-button";
 import { auth } from "@/lib/auth/server";
@@ -35,6 +35,13 @@ export async function Header() {
             >
               <Trophy className="h-4 w-4" />
               Leaderboard
+            </Link>
+            <Link
+              href="/docs"
+              className="hover:text-foreground/80 text-foreground/60 flex items-center gap-1 transition-colors"
+            >
+              <Book className="h-4 w-4" />
+              API Docs
             </Link>
           </nav>
         </div>

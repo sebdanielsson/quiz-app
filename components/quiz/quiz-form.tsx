@@ -40,6 +40,7 @@ export function QuizForm({ initialData, onSubmit, submitLabel = "Create Quiz" }:
     maxAttempts: initialData?.maxAttempts ?? 1,
     timeLimitSeconds: initialData?.timeLimitSeconds ?? 0,
     randomizeQuestions: initialData?.randomizeQuestions ?? true,
+    randomizeAnswers: initialData?.randomizeAnswers ?? true,
     questions: initialData?.questions ?? [{ ...defaultQuestion }],
   });
 
@@ -178,6 +179,15 @@ export function QuizForm({ initialData, onSubmit, submitLabel = "Create Quiz" }:
               onCheckedChange={(checked) => updateField("randomizeQuestions", checked)}
             />
             <Label htmlFor="randomizeQuestions">Randomize question order</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="randomizeAnswers"
+              checked={formData.randomizeAnswers}
+              onCheckedChange={(checked) => updateField("randomizeAnswers", checked)}
+            />
+            <Label htmlFor="randomizeAnswers">Randomize answer order</Label>
           </div>
         </CardContent>
       </Card>
