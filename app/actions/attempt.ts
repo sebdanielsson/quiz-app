@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { quiz, quizAttempt, attemptAnswer, answer } from "@/lib/db/schema";
+import type { Question, Answer } from "@/lib/db/schema";
 import { auth } from "@/lib/auth/server";
 import { eq, and, count } from "drizzle-orm";
 
@@ -59,11 +60,11 @@ export async function submitQuizAttempt(data: SubmitAttemptData) {
   }[] = [];
 
   for (const submittedAnswer of data.answers) {
-    const question = quizData.questions.find((q) => q.id === submittedAnswer.questionId);
+    const question = quizData.questions.find((q: Question) => q.id === submittedAnswer.questionId);
 
     if (!question) continue;
 
-    const selectedAnswer = question.answers.find((a) => a.id === submittedAnswer.answerId);
+    const selectedAnswer = question.answers.find((a: Answer) => a.id === submittedAnswer.answerId);
 
     const isCorrect = selectedAnswer?.isCorrect ?? false;
     if (isCorrect) correctCount++;

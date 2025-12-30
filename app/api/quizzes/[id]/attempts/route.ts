@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { quiz, quizAttempt, attemptAnswer } from "@/lib/db/schema";
+import type { Question, Answer } from "@/lib/db/schema";
 import { getApiContext, requirePermission, errorResponse, API_SCOPES } from "@/lib/auth/api";
 import { eq, and, count, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -136,11 +137,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }[] = [];
 
   for (const submittedAnswer of data.answers) {
-    const question = quizData.questions.find((q) => q.id === submittedAnswer.questionId);
+    const question = quizData.questions.find((q: Question) => q.id === submittedAnswer.questionId);
 
     if (!question) continue;
 
-    const selectedAnswer = question.answers.find((a) => a.id === submittedAnswer.answerId);
+    const selectedAnswer = question.answers.find((a: Answer) => a.id === submittedAnswer.answerId);
 
     const isCorrect = selectedAnswer?.isCorrect ?? false;
     if (isCorrect) correctCount++;

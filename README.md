@@ -18,7 +18,7 @@ A modern, full-stack quiz application built with Next.js 16, featuring OIDC auth
 
 - **Framework**: Next.js 16 (App Router, Turbopack)
 - **Runtime**: Bun
-- **Database**: SQLite with Drizzle ORM
+- **Database**: SQLite or PostgreSQL with Drizzle ORM
 - **Auth**: BetterAuth with OIDC + API Key plugins
 - **UI**: Tailwind CSS, Radix UI, Lucide Icons
 - **Validation**: Zod
@@ -63,11 +63,27 @@ OIDC_ADMIN_GROUP=admin
 
 ### Database Setup
 
+The app supports both SQLite (default) and PostgreSQL. Set the `DB_DIALECT` environment variable to choose your database.
+
+#### SQLite (Default)
+
 ```bash
-# Push schema to database (creates SQLite file)
+# No additional setup needed, just push the schema
 bun run db:push
 
-# Or generate and run migrations
+# Or use migrations
+bun run db:generate
+bun run db:migrate
+```
+
+#### PostgreSQL
+
+```bash
+# Set environment variables
+export DB_DIALECT=postgres
+export DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
+
+# Generate and run migrations
 bun run db:generate
 bun run db:migrate
 ```

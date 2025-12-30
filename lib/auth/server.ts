@@ -1,12 +1,12 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { genericOAuth, apiKey } from "better-auth/plugins";
-import { db } from "@/lib/db";
+import { db, dialect } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: "sqlite",
+    provider: dialect === "postgres" ? "pg" : "sqlite",
     schema: {
       user: schema.user,
       session: schema.session,

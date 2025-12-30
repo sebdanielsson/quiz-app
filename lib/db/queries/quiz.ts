@@ -1,8 +1,29 @@
 import { db } from "@/lib/db";
 import { quiz, question, answer, quizAttempt, user } from "@/lib/db/schema";
+import type { Quiz, Question, Answer, User, QuizAttempt, AttemptAnswer } from "@/lib/db/schema";
 import { eq, desc, count, sql, and, or, lte, isNull } from "drizzle-orm";
 
 export const ITEMS_PER_PAGE = 30;
+
+// Type for quiz with nested relations
+export type QuizWithRelations = Quiz & {
+  author: User;
+  questions: (Question & {
+    answers: Answer[];
+  })[];
+};
+
+// Type for quiz attempt with nested relations
+export type AttemptWithRelations = QuizAttempt & {
+  quiz: Quiz;
+  user: User;
+  answers: (AttemptAnswer & {
+    question: Question & {
+      answers: Answer[];
+    };
+    answer: Answer | null;
+  })[];
+};
 
 export interface PaginatedResult<T> {
   items: T[];
@@ -49,7 +70,7 @@ export async function getQuizzes(
     .limit(limit)
     .offset(offset);
 
-  const items = quizzes.map((q) => ({
+  const items = quizzes.map((q: { quiz: Quiz; questionCount: number; author: User }) => ({
     ...q.quiz,
     questionCount: q.questionCount,
     author: q.author,
@@ -69,7 +90,7 @@ export async function getQuizzes(
 /**
  * Get a single quiz by ID with all questions and answers
  */
-export async function getQuizById(quizId: string) {
+export async function getQuizById(quizId: string): Promise<QuizWithRelations | undefined> {
   const quizData = await db.query.quiz.findFirst({
     where: eq(quiz.id, quizId),
     with: {
@@ -78,12 +99,14 @@ export async function getQuizById(quizId: string) {
         with: {
           answers: true,
         },
-        orderBy: (questions, { asc }) => [asc(questions.order)],
+        orderBy: (questions: { order: unknown }, { asc }: { asc: (col: unknown) => unknown }) => [
+          asc(questions.order),
+        ],
       },
     },
   });
 
-  return quizData;
+  return quizData as QuizWithRelations | undefined;
 }
 
 /**
@@ -118,7 +141,7 @@ export async function getQuizLeaderboard(
   const totalPages = Math.ceil(total / limit);
 
   return {
-    items: entries.map((e, index) => ({
+    items: entries.map((e: { attempt: QuizAttempt; user: User }, index: number) => ({
       rank: offset + index + 1,
       ...e.attempt,
       user: e.user,
@@ -160,14 +183,25 @@ export async function getGlobalLeaderboard(page: number = 1, limit: number = ITE
   const totalPages = Math.ceil(total / limit);
 
   return {
-    items: entries.map((e, index) => ({
-      rank: offset + index + 1,
-      userId: e.userId,
-      totalCorrect: e.totalCorrect,
-      totalTimeMs: e.totalTimeMs,
-      quizzesPlayed: e.quizzesPlayed,
-      user: e.user,
-    })),
+    items: entries.map(
+      (
+        e: {
+          userId: string;
+          totalCorrect: number;
+          totalTimeMs: number;
+          quizzesPlayed: number;
+          user: User;
+        },
+        index: number,
+      ) => ({
+        rank: offset + index + 1,
+        userId: e.userId,
+        totalCorrect: e.totalCorrect,
+        totalTimeMs: e.totalTimeMs,
+        quizzesPlayed: e.quizzesPlayed,
+        user: e.user,
+      }),
+    ),
     totalCount: total,
     totalPages,
     currentPage: page,
@@ -190,7 +224,7 @@ export async function getUserAttemptCount(quizId: string, userId: string): Promi
 /**
  * Get a specific attempt with all answers
  */
-export async function getAttemptById(attemptId: string) {
+export async function getAttemptById(attemptId: string): Promise<AttemptWithRelations | undefined> {
   const attempt = await db.query.quizAttempt.findFirst({
     where: eq(quizAttempt.id, attemptId),
     with: {
@@ -205,10 +239,13 @@ export async function getAttemptById(attemptId: string) {
           },
           answer: true,
         },
-        orderBy: (answers, { asc }) => [asc(answers.displayOrder)],
+        orderBy: (
+          answers: { displayOrder: unknown },
+          { asc }: { asc: (col: unknown) => unknown },
+        ) => [asc(answers.displayOrder)],
       },
     },
   });
 
-  return attempt;
+  return attempt as AttemptWithRelations | undefined;
 }
