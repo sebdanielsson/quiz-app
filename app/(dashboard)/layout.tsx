@@ -19,10 +19,10 @@ export default async function DashboardLayout({
   return (
     <div className="relative min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 container py-6">{children}</main>
+      <main className="flex-1 container mx-auto py-6">{children}</main>
       <footer className="border-t py-6 md:py-0">
-        <div className="container flex h-14 items-center justify-center text-sm text-muted-foreground">
-          Quiz App © {new Date().getFullYear()}
+        <div className="container mx-auto flex h-14 items-center justify-center text-sm text-muted-foreground">
+          <span>View source code on <a href="https://github.com/sebdanielsson/quiz-app" target="_blank" rel="noopener noreferrer" className="text-black dark:text-white">GitHub</a></span>
         </div>
       </footer>
     </div>
