@@ -47,12 +47,12 @@ export default async function HomePage({ searchParams }: PageProps) {
           </p>
         </div>
         {isAdmin && (
-          <Button asChild>
-            <Link href="/quiz/new">
-              <Plus className="h-4 w-4" />
-              <span className="ml-2 hidden sm:block">Create Quiz</span>
-            </Link>
-          </Button>
+          <Link href="/quiz/new">
+            <Button>
+              <Plus />
+              <span className="hidden sm:inline-block">Create Quiz</span>
+            </Button>
+          </Link>
         )}
       </div>
 
@@ -60,9 +60,9 @@ export default async function HomePage({ searchParams }: PageProps) {
         <div className="py-12 text-center">
           <p className="text-muted-foreground text-lg">No quizzes available yet.</p>
           {isAdmin && (
-            <Button asChild className="mt-4">
-              <Link href="/quiz/new">Create the first quiz</Link>
-            </Button>
+            <Link href="/quiz/new">
+              <Button className="mt-4">Create the first quiz</Button>
+            </Link>
           )}
         </div>
       ) : (

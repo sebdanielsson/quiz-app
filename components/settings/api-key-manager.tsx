@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from "react";
 import { authClient } from "@/lib/auth/client";
 import { createApiKey, deleteApiKey } from "@/app/actions/api-keys";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -26,7 +26,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Key, Plus, Trash2, Copy, Check, AlertCircle } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Key, Plus, Trash2, Copy, Check, AlertCircle, ChevronDownIcon, X } from "lucide-react";
 import { API_SCOPES, type ApiScope, ALL_API_SCOPES } from "@/lib/auth/scopes";
 
 interface ApiKey {
@@ -235,11 +238,9 @@ export function ApiKeyManager() {
             </CardDescription>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4" />
-                <span className="ml-2 hidden sm:block">Create Key</span>
-              </Button>
+            <DialogTrigger className={cn(buttonVariants(), "gap-1.5")}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:block">Create Key</span>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               {newKeyValue ? (
@@ -297,14 +298,77 @@ export function ApiKeyManager() {
                         onChange={(e) => setKeyName(e.target.value)}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="expiresAt">Expiration (optional)</Label>
-                      <Input
-                        id="expiresAt"
-                        type="datetime-local"
-                        value={expiresAt}
-                        onChange={(e) => setExpiresAt(e.target.value)}
-                      />
+                    <div className="flex gap-4">
+                      <div className="flex flex-col gap-3">
+                        <Label htmlFor="expire-date-picker" className="px-1">
+                          Expiration (optional)
+                        </Label>
+                        <Popover>
+                          <PopoverTrigger
+                            id="expire-date-picker"
+                            className={cn(
+                              buttonVariants({ variant: "outline" }),
+                              "w-32 justify-between font-normal",
+                            )}
+                          >
+                            {expiresAt ? new Date(expiresAt).toLocaleDateString() : "Select date"}
+                            <ChevronDownIcon />
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              captionLayout="dropdown"
+                              selected={expiresAt ? new Date(expiresAt) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  const existing = expiresAt ? new Date(expiresAt) : new Date();
+                                  date.setHours(existing.getHours(), existing.getMinutes());
+                                  setExpiresAt(date.toISOString());
+                                } else {
+                                  setExpiresAt("");
+                                }
+                              }}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        <Label htmlFor="expire-time-picker" className="px-1">
+                          Time
+                        </Label>
+                        <Input
+                          type="time"
+                          id="expire-time-picker"
+                          className="bg-background w-28 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                          value={
+                            expiresAt
+                              ? `${String(new Date(expiresAt).getHours()).padStart(2, "0")}:${String(new Date(expiresAt).getMinutes()).padStart(2, "0")}`
+                              : ""
+                          }
+                          onChange={(e) => {
+                            if (e.target.value && expiresAt) {
+                              const [hours, minutes] = e.target.value.split(":").map(Number);
+                              const newDate = new Date(expiresAt);
+                              newDate.setHours(hours, minutes);
+                              setExpiresAt(newDate.toISOString());
+                            }
+                          }}
+                          disabled={!expiresAt}
+                        />
+                      </div>
+                      {expiresAt && (
+                        <div className="flex flex-col gap-3">
+                          <Label className="px-1 opacity-0">Clear</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setExpiresAt("")}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-3">
                       <Label>Permissions</Label>
@@ -313,7 +377,8 @@ export function ApiKeyManager() {
                           <div key={scope} className="flex items-center justify-between">
                             <Label
                               htmlFor={`scope-${scope}`}
-                              className="cursor-pointer font-normal"
+                              className="cursor-pointer"
+                              style={{ fontWeight: 300 }}
                             >
                               {SCOPE_LABELS[scope]}
                             </Label>

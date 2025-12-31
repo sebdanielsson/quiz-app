@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { deleteQuiz } from "@/app/actions/quiz";
 
 interface DeleteQuizButtonProps {
@@ -39,11 +40,11 @@ export function DeleteQuizButton({ quizId }: DeleteQuizButtonProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="destructive" size="lg">
-          <Trash2 className="mr-2 h-4 w-4" />
+      <DialogTrigger>
+        <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
+          <Trash2 className="h-4 w-4" />
           Delete
-        </Button>
+        </DropdownMenuItem>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -58,7 +59,7 @@ export function DeleteQuizButton({ quizId }: DeleteQuizButtonProps) {
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
             Delete Quiz
           </Button>
         </DialogFooter>

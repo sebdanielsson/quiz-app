@@ -67,7 +67,7 @@ export function DatabaseError({ message, dialect = "postgres" }: DatabaseErrorPr
         <CardContent className="space-y-4">
           <RadioGroup
             value={selectedAnswer ?? ""}
-            onValueChange={setSelectedAnswer}
+            onValueChange={(value) => setSelectedAnswer(value as string)}
             disabled={showFeedback}
           >
             {answers.map((answer) => {

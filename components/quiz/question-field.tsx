@@ -112,7 +112,7 @@ export function QuestionField({
             <Label>Answers (select the correct one) *</Label>
             {question.answers.length < 6 && (
               <Button type="button" variant="outline" size="sm" onClick={addAnswer}>
-                <Plus className="mr-1 h-3 w-3" />
+                <Plus className="h-3 w-3" />
                 Add
               </Button>
             )}
@@ -120,7 +120,7 @@ export function QuestionField({
 
           <RadioGroup
             value={correctAnswerIndex.toString()}
-            onValueChange={(value) => setCorrectAnswer(parseInt(value))}
+            onValueChange={(value) => setCorrectAnswer(parseInt(value as string))}
           >
             {question.answers.map((answer, answerIndex) => (
               <div key={answerIndex} className="flex items-center gap-2 rounded-md border p-2">

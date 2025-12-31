@@ -71,9 +71,9 @@ export function QuizCard({ quiz }: QuizCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="mb-6 w-full">
-          <Link href={`/quiz/${quiz.id}`}>View Quiz</Link>
-        </Button>
+        <Link href={`/quiz/${quiz.id}`}>
+          <Button className="mb-6 w-full">View Quiz</Button>
+        </Link>
       </CardFooter>
     </Card>
   );

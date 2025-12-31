@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { CheckCircle, XCircle, Clock, ArrowLeft, Trophy } from "lucide-react";
 import { auth } from "@/lib/auth/server";
 import { getAttemptById } from "@/lib/db/queries/quiz";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -62,11 +61,12 @@ export default async function ResultsPage({ params, searchParams }: PageProps) {
     <div className="mx-auto max-w-3xl space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="icon">
-          <Link href={`/quiz/${quizId}`}>
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
+        <Link
+          href={`/quiz/${quizId}`}
+          className="hover:bg-muted inline-flex size-9 items-center justify-center rounded-md"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
         <div>
           <h1 className="text-2xl font-bold">Quiz Results</h1>
           <p className="text-muted-foreground">{attempt.quiz.title}</p>
@@ -148,12 +148,18 @@ export default async function ResultsPage({ params, searchParams }: PageProps) {
 
       {/* Actions */}
       <div className="flex gap-4">
-        <Button asChild className="flex-1">
-          <Link href={`/quiz/${quizId}`}>Back to Quiz</Link>
-        </Button>
-        <Button asChild variant="outline" className="flex-1">
-          <Link href="/">Browse More Quizzes</Link>
-        </Button>
+        <Link
+          href={`/quiz/${quizId}`}
+          className="bg-primary text-primary-foreground hover:bg-primary/80 inline-flex h-9 flex-1 items-center justify-center rounded-md px-2.5 text-sm font-medium"
+        >
+          Back to Quiz
+        </Link>
+        <Link
+          href="/"
+          className="border-border bg-background hover:bg-muted hover:text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 inline-flex h-9 flex-1 items-center justify-center rounded-md border px-2.5 text-sm font-medium shadow-xs"
+        >
+          Browse More Quizzes
+        </Link>
       </div>
     </div>
   );

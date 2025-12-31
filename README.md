@@ -20,7 +20,7 @@ A modern, full-stack quiz application built with Next.js 16, featuring OIDC auth
 - **Runtime**: Bun
 - **Database**: SQLite or PostgreSQL with Drizzle ORM
 - **Auth**: BetterAuth with OIDC + API Key plugins
-- **UI**: Tailwind CSS, Radix UI, Lucide Icons
+- **UI**: Tailwind CSS, BaseUI, Lucide Icons
 - **Validation**: Zod
 
 ## Getting Started

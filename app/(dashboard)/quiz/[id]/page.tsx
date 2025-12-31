@@ -2,17 +2,26 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Calendar, Clock, HelpCircle, Play, Pencil, Users } from "lucide-react";
+import { Calendar, Clock, HelpCircle, Play, Pencil, Users, SettingsIcon } from "lucide-react";
 import { auth } from "@/lib/auth/server";
 import { canEditQuiz, canManageQuizzes } from "@/lib/auth/permissions";
 import { getQuizById, getQuizLeaderboard, getUserAttemptCount } from "@/lib/db/queries/quiz";
-import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { QuizLeaderboard } from "@/components/quiz/quiz-leaderboard";
 import { PaginationControls } from "@/components/layout/pagination-controls";
 import { DeleteQuizButton } from "./delete-quiz-button";
+import { cn } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -100,32 +109,46 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
             </div>
           </div>
 
-          <div className="flex gap-2">
-            {canPlay ? (
-              <Button asChild size="lg">
+          <ButtonGroup>
+            <ButtonGroup>
+              {canPlay ? (
                 <Link href={`/quiz/${id}/play`}>
-                  <Play className="mr-2 h-4 w-4" />
-                  Start Quiz
+                  <Button size="lg">
+                    <Play className="h-4 w-4" /> Start Quiz
+                  </Button>
                 </Link>
-              </Button>
-            ) : (
-              <Button disabled size="lg">
-                No attempts remaining
-              </Button>
-            )}
+              ) : (
+                <Button disabled>No attempts remaining</Button>
+              )}
+            </ButtonGroup>
 
             {canEdit && (
-              <>
-                <Button asChild variant="outline" size="lg">
-                  <Link href={`/quiz/${id}/edit`}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </Link>
-                </Button>
-                <DeleteQuizButton quizId={id} />
-              </>
+              <ButtonGroup>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "icon-lg" }),
+                      "outline-none",
+                    )}
+                    aria-label="More Options"
+                  >
+                    <SettingsIcon />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem>
+                        <Link href={`/quiz/${id}/edit`} className="flex items-center gap-2">
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </Link>
+                      </DropdownMenuItem>
+                      <DeleteQuizButton quizId={id} />
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </ButtonGroup>
             )}
-          </div>
+          </ButtonGroup>
         </div>
 
         {session?.user && (

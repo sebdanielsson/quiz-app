@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, Loader2, ChevronDownIcon, X } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { QuestionField } from "./question-field";
 import type { QuizFormData, QuestionFormData } from "@/lib/validations/quiz";
 
@@ -191,24 +194,85 @@ export function QuizForm({ initialData, onSubmit, submitLabel = "Create Quiz" }:
             <Label htmlFor="randomizeAnswers">Randomize answer order</Label>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="publishedAt">Published Date (optional)</Label>
-            <Input
-              id="publishedAt"
-              type="datetime-local"
-              value={
-                formData.publishedAt
-                  ? new Date(formData.publishedAt).toISOString().slice(0, 16)
-                  : ""
-              }
-              onChange={(e) =>
-                updateField("publishedAt", e.target.value ? new Date(e.target.value) : null)
-              }
-            />
-            <p className="text-muted-foreground text-sm">
-              If set to a future date, the published date won&apos;t be displayed until then.
-            </p>
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="publish-date-picker" className="px-1">
+                Publish Date (optional)
+              </Label>
+              <Popover>
+                <PopoverTrigger
+                  id="publish-date-picker"
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "w-32 justify-between font-normal",
+                  )}
+                >
+                  {formData.publishedAt
+                    ? new Date(formData.publishedAt).toLocaleDateString()
+                    : "Select date"}
+                  <ChevronDownIcon />
+                </PopoverTrigger>
+                <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    captionLayout="dropdown"
+                    selected={formData.publishedAt ? new Date(formData.publishedAt) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        const existing = formData.publishedAt
+                          ? new Date(formData.publishedAt)
+                          : new Date();
+                        date.setHours(existing.getHours(), existing.getMinutes());
+                        updateField("publishedAt", date);
+                      } else {
+                        updateField("publishedAt", null);
+                      }
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="publish-time-picker" className="px-1">
+                Time
+              </Label>
+              <Input
+                type="time"
+                id="publish-time-picker"
+                className="bg-background w-28 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                value={
+                  formData.publishedAt
+                    ? `${String(new Date(formData.publishedAt).getHours()).padStart(2, "0")}:${String(new Date(formData.publishedAt).getMinutes()).padStart(2, "0")}`
+                    : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value && formData.publishedAt) {
+                    const [hours, minutes] = e.target.value.split(":").map(Number);
+                    const newDate = new Date(formData.publishedAt);
+                    newDate.setHours(hours, minutes);
+                    updateField("publishedAt", newDate);
+                  }
+                }}
+                disabled={!formData.publishedAt}
+              />
+            </div>
+            {formData.publishedAt && (
+              <div className="flex flex-col gap-3">
+                <Label className="px-1 opacity-0">Clear</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => updateField("publishedAt", null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
+          <p className="text-muted-foreground text-sm">
+            If set to a future date, the published date won&apos;t be displayed until then.
+          </p>
         </CardContent>
       </Card>
 
@@ -217,7 +281,7 @@ export function QuizForm({ initialData, onSubmit, submitLabel = "Create Quiz" }:
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Questions</h2>
           <Button type="button" onClick={addQuestion} variant="outline">
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Add Question
           </Button>
         </div>
@@ -237,7 +301,7 @@ export function QuizForm({ initialData, onSubmit, submitLabel = "Create Quiz" }:
       {/* Submit */}
       <div className="flex gap-4">
         <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {submitLabel}
         </Button>
         <Button
