@@ -7,6 +7,20 @@ export const runtime = "edge";
 // Revalidate every hour
 export const revalidate = 3600;
 
+// Type for leaderboard entry
+type LeaderboardEntry = {
+  rank: number;
+  userId: string;
+  totalCorrect: number;
+  totalTimeMs: number;
+  quizzesPlayed: number;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+};
+
 // Image generation for leaderboard OG image
 export async function GET() {
   try {
@@ -80,7 +94,7 @@ export async function GET() {
                 maxWidth: "800px",
               }}
             >
-              {leaderboard.items.map((entry: any, index: number) => (
+              {leaderboard.items.map((entry: LeaderboardEntry, index: number) => (
                 <div
                   key={entry.userId}
                   style={{
