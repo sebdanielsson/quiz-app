@@ -79,9 +79,7 @@ export async function GET(request: NextRequest) {
                 maxWidth: "900px",
                 lineHeight: 1.2,
                 overflow: "hidden",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
+                textOverflow: "ellipsis",
               }}
             >
               {quiz.title}
@@ -98,9 +96,7 @@ export async function GET(request: NextRequest) {
                   maxWidth: "800px",
                   lineHeight: 1.4,
                   overflow: "hidden",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: "vertical",
+                  textOverflow: "ellipsis",
                 }}
               >
                 {quiz.description}
