@@ -54,7 +54,7 @@ app/
   - Quiz description (max 3 lines)
   - Quiz stats (question count, time limit)
   - Purple gradient background
-- **Runtime:** Edge
+- **Runtime:** Node.js (requires database access)
 - **Caching:** Revalidates every 3600 seconds (1 hour)
 - **Authentication:** Bypasses authentication (accessible to crawlers)
 
@@ -74,7 +74,7 @@ The quiz detail page (`app/(dashboard)/quiz/[id]/page.tsx`) exports a `generateM
   - Top 3 players (medal emojis: 🥇 🥈 🥉)
   - Player names, correct answers, and quizzes played
   - Purple gradient background
-- **Runtime:** Edge
+- **Runtime:** Node.js (requires database access)
 - **Caching:** Revalidates every 3600 seconds (1 hour)
 - **Authentication:** Bypasses authentication (accessible to crawlers)
 

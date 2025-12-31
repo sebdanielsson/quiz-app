@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { getQuizById } from "@/lib/db/queries/quiz";
 
 // Route segment config
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 // Revalidate every hour
 export const revalidate = 3600;

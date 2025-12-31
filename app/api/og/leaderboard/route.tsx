@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { getGlobalLeaderboard } from "@/lib/db/queries/quiz";
 
 // Route segment config
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 // Revalidate every hour
 export const revalidate = 3600;
