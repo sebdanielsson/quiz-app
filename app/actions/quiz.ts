@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { quiz, question, answer } from "@/lib/db/schema";
 import { auth } from "@/lib/auth/server";
-import { canManageQuizzes, canEditQuiz } from "@/lib/auth/permissions";
+import { canCreateQuiz, canEditQuiz, canDeleteQuiz } from "@/lib/rbac";
 import { quizSchema, type QuizFormData } from "@/lib/validations/quiz";
 import { eq } from "drizzle-orm";
 
@@ -25,7 +25,7 @@ export async function createQuiz(data: QuizFormData) {
     return { error: "Unauthorized" };
   }
 
-  if (!canManageQuizzes(session.user)) {
+  if (!canCreateQuiz(session.user)) {
     return { error: "You don't have permission to create quizzes" };
   }
 
@@ -193,7 +193,7 @@ export async function deleteQuiz(quizId: string) {
     return { error: "Quiz not found" };
   }
 
-  if (!canEditQuiz(session.user, existingQuiz.authorId)) {
+  if (!canDeleteQuiz(session.user, existingQuiz.authorId)) {
     return { error: "You don't have permission to delete this quiz" };
   }
 

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
-import { canManageQuizzes } from "@/lib/auth/permissions";
+import { canAccessSettings, getUserRole, getPermissionsForRole } from "@/lib/rbac";
 import { ApiKeyManager } from "@/components/settings/api-key-manager";
 import { Settings } from "lucide-react";
 
@@ -14,10 +14,14 @@ export default async function SettingsPage() {
     redirect("/sign-in");
   }
 
-  // Only admins can access settings
-  if (!canManageQuizzes(session.user)) {
+  // Only users with settings:manage permission can access
+  if (!canAccessSettings(session.user)) {
     redirect("/");
   }
+
+  // Get user's permissions to filter what they can grant to API keys
+  const userRole = getUserRole(session.user);
+  const userPermissions = getPermissionsForRole(userRole);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
@@ -30,7 +34,7 @@ export default async function SettingsPage() {
       </div>
 
       <div className="">
-        <ApiKeyManager />
+        <ApiKeyManager userPermissions={userPermissions} />
       </div>
     </div>
   );

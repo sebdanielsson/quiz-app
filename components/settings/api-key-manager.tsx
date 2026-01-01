@@ -30,7 +30,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Key, Plus, Trash2, Copy, Check, AlertCircle, ChevronDownIcon, X } from "lucide-react";
-import { API_SCOPES, type ApiScope, ALL_API_SCOPES } from "@/lib/auth/scopes";
+import { PERMISSION_GROUPS, PERMISSION_LABELS, type Permission } from "@/lib/rbac";
 
 interface ApiKey {
   id: string;
@@ -41,14 +41,11 @@ interface ApiKey {
   permissions: Record<string, string[]> | null;
 }
 
-const SCOPE_LABELS: Record<ApiScope, string> = {
-  [API_SCOPES.QUIZZES_READ]: "Read Quizzes",
-  [API_SCOPES.QUIZZES_WRITE]: "Write Quizzes",
-  [API_SCOPES.ATTEMPTS_READ]: "Read Attempts",
-  [API_SCOPES.ATTEMPTS_WRITE]: "Write Attempts",
-};
+interface ApiKeyManagerProps {
+  userPermissions: Permission[];
+}
 
-export function ApiKeyManager() {
+export function ApiKeyManager({ userPermissions }: ApiKeyManagerProps) {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -60,7 +57,7 @@ export function ApiKeyManager() {
   // Form state
   const [keyName, setKeyName] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
-  const [selectedScopes, setSelectedScopes] = useState<Set<ApiScope>>(new Set());
+  const [selectedPermissions, setSelectedPermissions] = useState<Set<Permission>>(new Set());
 
   const fetchApiKeys = async () => {
     try {
@@ -89,7 +86,7 @@ export function ApiKeyManager() {
       return;
     }
 
-    if (selectedScopes.size === 0) {
+    if (selectedPermissions.size === 0) {
       setError("At least one permission is required");
       return;
     }
@@ -98,17 +95,6 @@ export function ApiKeyManager() {
 
     startTransition(async () => {
       try {
-        // Convert scopes to BetterAuth permission format
-        // e.g., { quizzes: ["read", "write"], attempts: ["read"] }
-        const permissions: Record<string, string[]> = {};
-        for (const scope of selectedScopes) {
-          const [resource, action] = scope.split(":");
-          if (!permissions[resource]) {
-            permissions[resource] = [];
-          }
-          permissions[resource].push(action);
-        }
-
         // Calculate expiresIn in seconds if expiry date is set
         let expiresInSeconds: number | undefined;
         if (expiresAt) {
@@ -125,7 +111,7 @@ export function ApiKeyManager() {
         const result = await createApiKey({
           name: keyName.trim(),
           expiresInSeconds,
-          permissions,
+          permissions: Array.from(selectedPermissions),
         });
 
         if (!result.success) {
@@ -178,32 +164,50 @@ export function ApiKeyManager() {
     setIsCreateOpen(false);
     setKeyName("");
     setExpiresAt("");
-    setSelectedScopes(new Set());
+    setSelectedPermissions(new Set());
     setNewKeyValue(null);
     setError(null);
   };
 
-  const toggleScope = (scope: ApiScope) => {
-    setSelectedScopes((prev) => {
+  const togglePermission = (permission: Permission) => {
+    setSelectedPermissions((prev) => {
       const next = new Set(prev);
-      if (next.has(scope)) {
-        next.delete(scope);
+      if (next.has(permission)) {
+        next.delete(permission);
       } else {
-        next.add(scope);
+        next.add(permission);
       }
       return next;
     });
   };
 
-  const formatPermissions = (permissions: Record<string, string[]> | null): string[] => {
-    if (!permissions) return [];
-    const scopes: string[] = [];
-    for (const [resource, actions] of Object.entries(permissions)) {
-      for (const action of actions) {
-        scopes.push(`${resource}:${action}`);
+  // Get available permission groups (filtered by what user has)
+  const getAvailableGroups = () => {
+    const groups: { key: string; label: string; permissions: Permission[] }[] = [];
+    for (const [key, group] of Object.entries(PERMISSION_GROUPS)) {
+      const available = group.permissions.filter((p) => userPermissions.includes(p));
+      if (available.length > 0) {
+        groups.push({ key, label: group.label, permissions: available as Permission[] });
       }
     }
-    return scopes;
+    return groups;
+  };
+
+  const formatPermissions = (
+    permissions: Record<string, string[]> | null,
+  ): { key: string; label: string }[] => {
+    if (!permissions) return [];
+    const result: { key: string; label: string }[] = [];
+    for (const [resource, actions] of Object.entries(permissions)) {
+      for (const action of actions) {
+        const key = `${resource}:${action}` as Permission;
+        result.push({
+          key,
+          label: PERMISSION_LABELS[key] || key,
+        });
+      }
+    }
+    return result;
   };
 
   if (isLoading) {
@@ -372,21 +376,36 @@ export function ApiKeyManager() {
                     </div>
                     <div className="space-y-3">
                       <Label>Permissions</Label>
-                      <div className="space-y-2">
-                        {ALL_API_SCOPES.map((scope) => (
-                          <div key={scope} className="flex items-center justify-between">
-                            <Label
-                              htmlFor={`scope-${scope}`}
-                              className="cursor-pointer"
-                              style={{ fontWeight: 300 }}
-                            >
-                              {SCOPE_LABELS[scope]}
-                            </Label>
-                            <Switch
-                              id={`scope-${scope}`}
-                              checked={selectedScopes.has(scope)}
-                              onCheckedChange={() => toggleScope(scope)}
-                            />
+                      <p className="text-muted-foreground text-xs">
+                        You can only grant permissions that you have.
+                      </p>
+                      <div className="scrollbar-hidden max-h-64 space-y-4 overflow-x-hidden overflow-y-auto">
+                        {getAvailableGroups().map((group) => (
+                          <div key={group.key} className="space-y-2">
+                            <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                              {group.label}
+                            </h4>
+                            <div className="space-y-1">
+                              {group.permissions.map((permission) => (
+                                <div
+                                  key={permission}
+                                  className="mr-1 flex items-center justify-between py-0.5"
+                                >
+                                  <Label
+                                    htmlFor={`perm-${permission}`}
+                                    className="cursor-pointer text-sm"
+                                    style={{ fontWeight: 400 }}
+                                  >
+                                    {PERMISSION_LABELS[permission]}
+                                  </Label>
+                                  <Switch
+                                    id={`perm-${permission}`}
+                                    checked={selectedPermissions.has(permission)}
+                                    onCheckedChange={() => togglePermission(permission)}
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -438,9 +457,9 @@ export function ApiKeyManager() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {formatPermissions(key.permissions).map((scope) => (
-                        <Badge key={scope} variant="secondary" className="text-xs">
-                          {scope}
+                      {formatPermissions(key.permissions).map((perm) => (
+                        <Badge key={perm.key} variant="secondary" className="text-xs">
+                          {perm.label}
                         </Badge>
                       ))}
                     </div>

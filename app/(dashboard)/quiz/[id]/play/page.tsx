@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
-import { canManageQuizzes } from "@/lib/auth/permissions";
+import { canAccess, isAdmin as checkIsAdmin } from "@/lib/rbac";
 import { getQuizById, getUserAttemptCount } from "@/lib/db/queries/quiz";
 import { QuizPlayer } from "@/components/quiz/quiz-player";
 import { submitQuizAttempt } from "@/app/actions/attempt";
@@ -26,8 +26,14 @@ export default async function PlayQuizPage({ params }: PageProps) {
     headers: await headers(),
   });
 
+  // Playing quizzes requires authentication (results must be saved)
   if (!session?.user) {
     redirect("/sign-in");
+  }
+
+  // Check if user can play quizzes
+  if (!canAccess(session.user, "playQuiz")) {
+    redirect(`/quiz/${id}`);
   }
 
   const quiz = await getQuizById(id);
@@ -37,7 +43,7 @@ export default async function PlayQuizPage({ params }: PageProps) {
   }
 
   // Non-admins cannot play unpublished quizzes (publishedAt in the future)
-  if (!canManageQuizzes(session.user) && quiz.publishedAt && quiz.publishedAt > new Date()) {
+  if (!checkIsAdmin(session.user) && quiz.publishedAt && quiz.publishedAt > new Date()) {
     notFound();
   }
 
