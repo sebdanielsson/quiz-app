@@ -30,127 +30,125 @@ export async function GET() {
 
     // Generate OG image
     return new ImageResponse(
-      (
+      <div
+        style={{
+          fontSize: 48,
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+          fontFamily: "sans-serif",
+          padding: "60px",
+        }}
+      >
         <div
           style={{
-            fontSize: 48,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            width: "100%",
-            height: "100%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            color: "white",
-            fontFamily: "sans-serif",
+            background: "rgba(0, 0, 0, 0.3)",
+            borderRadius: "20px",
             padding: "60px",
+            width: "100%",
+            height: "100%",
           }}
         >
+          {/* Title */}
+          <div
+            style={{
+              fontSize: 28,
+              fontWeight: "normal",
+              opacity: 0.9,
+              marginBottom: "10px",
+            }}
+          >
+            Quiz App
+          </div>
+
+          <div
+            style={{
+              fontSize: 72,
+              fontWeight: "bold",
+              marginBottom: "40px",
+              display: "flex",
+              alignItems: "center",
+              gap: "20px",
+            }}
+          >
+            <span>🏆</span>
+            <span>Leaderboard</span>
+          </div>
+
+          {/* Top 3 players */}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0, 0, 0, 0.3)",
-              borderRadius: "20px",
-              padding: "60px",
+              gap: "20px",
               width: "100%",
-              height: "100%",
+              maxWidth: "800px",
             }}
           >
-            {/* Title */}
-            <div
-              style={{
-                fontSize: 28,
-                fontWeight: "normal",
-                opacity: 0.9,
-                marginBottom: "10px",
-              }}
-            >
-              Quiz App
-            </div>
-
-            <div
-              style={{
-                fontSize: 72,
-                fontWeight: "bold",
-                marginBottom: "40px",
-                display: "flex",
-                alignItems: "center",
-                gap: "20px",
-              }}
-            >
-              <span>🏆</span>
-              <span>Leaderboard</span>
-            </div>
-
-            {/* Top 3 players */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "20px",
-                width: "100%",
-                maxWidth: "800px",
-              }}
-            >
-              {leaderboard.items.map((entry: LeaderboardEntry, index: number) => (
-                <div
-                  key={entry.userId}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    borderRadius: "12px",
-                    padding: "20px 40px",
-                    fontSize: index === 0 ? 36 : 32,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                    <span style={{ fontSize: 40, fontWeight: "bold" }}>
-                      {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
-                    </span>
-                    <span style={{ fontWeight: index === 0 ? "bold" : "normal" }}>
-                      {entry.user.name || "Anonymous"}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "40px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span>✅</span>
-                      <span>{entry.totalCorrect}</span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        opacity: 0.8,
-                      }}
-                    >
-                      <span>📝</span>
-                      <span>{entry.quizzesPlayed}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {leaderboard.items.length === 0 && (
+            {leaderboard.items.map((entry: LeaderboardEntry, index: number) => (
               <div
+                key={entry.userId}
                 style={{
-                  fontSize: 32,
-                  opacity: 0.8,
-                  textAlign: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  padding: "20px 40px",
+                  fontSize: index === 0 ? 36 : 32,
                 }}
               >
-                No players yet. Be the first to take a quiz!
+                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                  <span style={{ fontSize: 40, fontWeight: "bold" }}>
+                    {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
+                  </span>
+                  <span style={{ fontWeight: index === 0 ? "bold" : "normal" }}>
+                    {entry.user.name || "Anonymous"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "40px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span>✅</span>
+                    <span>{entry.totalCorrect}</span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      opacity: 0.8,
+                    }}
+                  >
+                    <span>📝</span>
+                    <span>{entry.quizzesPlayed}</span>
+                  </div>
+                </div>
               </div>
-            )}
+            ))}
           </div>
+
+          {leaderboard.items.length === 0 && (
+            <div
+              style={{
+                fontSize: 32,
+                opacity: 0.8,
+                textAlign: "center",
+              }}
+            >
+              No players yet. Be the first to take a quiz!
+            </div>
+          )}
         </div>
-      ),
+      </div>,
       {
         width: 1200,
         height: 630,

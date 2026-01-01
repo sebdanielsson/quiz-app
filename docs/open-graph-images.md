@@ -61,6 +61,7 @@ app/
 
 **Usage in pages:**
 The quiz detail page (`app/(dashboard)/quiz/[id]/page.tsx`) exports a `generateMetadata()` function that:
+
 - Fetches quiz data
 - Returns metadata with `openGraph` and `twitter` card properties
 - Points to `/api/og/quiz?id={quizId}` for the OG image
@@ -82,6 +83,7 @@ The quiz detail page (`app/(dashboard)/quiz/[id]/page.tsx`) exports a `generateM
 
 **Usage in pages:**
 The leaderboard page (`app/(dashboard)/leaderboard/page.tsx`) exports a `generateMetadata()` function that:
+
 - Returns metadata with `openGraph` and `twitter` card properties
 - Points to `/api/og/leaderboard` for the OG image
 
@@ -117,6 +119,7 @@ export const revalidate = 3600; // Revalidate every hour
 ```
 
 This means:
+
 - Images are generated on first request
 - Cached for 1 hour
 - Regenerated after cache expiry
@@ -126,6 +129,7 @@ This means:
 ## Design System
 
 All OG images use:
+
 - **Color Scheme:** Purple gradient (`#667eea` to `#764ba2`)
 - **Fonts:** System sans-serif fonts
 - **Dimensions:** 1200x630 pixels (recommended OG image size)
@@ -136,10 +140,11 @@ All OG images use:
 To test the OG images:
 
 1. **Local Testing:**
+
    ```bash
    # Start the dev server
    npm run dev
-   
+
    # Access OG images:
    # - Default: http://localhost:3000/opengraph-image
    # - Quiz: http://localhost:3000/api/og/quiz?id={quizId}
@@ -187,6 +192,7 @@ To test the OG images:
 ## Future Enhancements
 
 Potential improvements:
+
 - Add quiz hero images to the OG image background
 - Support for custom color schemes per quiz
 - Add quiz category/tags to OG image
