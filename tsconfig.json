@@ -19,8 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@/lib/db/schema": ["./lib/db/schema.sqlite.ts"]
+      "@/*": ["./*"]
     }
   },
   "include": [

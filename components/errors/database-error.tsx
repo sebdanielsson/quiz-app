@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 
 interface DatabaseErrorProps {
   message: string;
-  dialect?: "sqlite" | "postgres";
 }
 
 const answers = [
@@ -21,7 +20,7 @@ const answers = [
   { id: "seaweedfs", text: "SeaweedFS (S3)", isCorrect: false },
 ];
 
-export function DatabaseError({ message, dialect = "postgres" }: DatabaseErrorProps) {
+export function DatabaseError({ message }: DatabaseErrorProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
 
@@ -121,20 +120,11 @@ export function DatabaseError({ message, dialect = "postgres" }: DatabaseErrorPr
             <div className="bg-muted rounded-lg p-4 text-sm">
               <p className="font-medium">To fix this:</p>
               <ul className="text-muted-foreground mt-2 list-inside list-disc space-y-1">
-                {dialect === "postgres" ? (
-                  <>
-                    <li>
-                      Run: <code className="bg-background rounded px-1">docker compose up -d</code>
-                    </li>
-                    <li>Wait a few seconds for PostgreSQL to start</li>
-                    <li>Then refresh this page</li>
-                  </>
-                ) : (
-                  <>
-                    <li>Check that the SQLite database file path is correct</li>
-                    <li>Verify file permissions</li>
-                  </>
-                )}
+                <li>
+                  Run: <code className="bg-background rounded px-1">docker compose up -d</code>
+                </li>
+                <li>Wait a few seconds for PostgreSQL to start</li>
+                <li>Then refresh this page</li>
               </ul>
             </div>
           )}

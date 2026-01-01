@@ -5,7 +5,6 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
 import { canAccess, canCreateQuiz, isAdmin as checkIsAdmin } from "@/lib/rbac";
 import { getQuizzes } from "@/lib/db/queries/quiz";
-import { dialect } from "@/lib/db";
 import { checkDatabaseHealth } from "@/lib/db/health";
 import { Button } from "@/components/ui/button";
 import { QuizCard } from "@/components/quiz/quiz-card";
@@ -20,12 +19,7 @@ export default async function HomePage({ searchParams }: PageProps) {
   // Check database health first before any queries
   const dbHealth = await checkDatabaseHealth();
   if (!dbHealth.connected) {
-    return (
-      <DatabaseError
-        message={dbHealth.error || "Unable to connect to database"}
-        dialect={dialect}
-      />
-    );
+    return <DatabaseError message={dbHealth.error || "Unable to connect to database"} />;
   }
 
   const params = await searchParams;

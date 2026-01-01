@@ -1,58 +1,37 @@
 # Database Setup
 
-The Quiz App supports both SQLite and PostgreSQL databases. SQLite is the default for simple deployments, while PostgreSQL is recommended for production.
+The Quiz App uses PostgreSQL with Bun's native SQL driver (`bun:sql`) and Drizzle ORM.
 
 ## Quick Start
 
-### SQLite (Default)
-
-No additional configuration needed. The database file will be created automatically:
-
-```bash
-# Push schema to database
-bun run db:push
-
-# Or use migrations
-bun run db:generate
-bun run db:migrate
-```
-
-### PostgreSQL
-
-Set the following environment variables:
+Set the following environment variable:
 
 ```env
-DB_DIALECT=postgres
 DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
 ```
 
 Then run migrations:
 
 ```bash
-bun run db:generate
+# Start PostgreSQL (via Docker Compose)
+docker compose up -d
+
+# Run migrations
 bun run db:migrate
+
+# Or push schema directly (development)
+bun run db:push
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable       | Default   | Description                           |
-| -------------- | --------- | ------------------------------------- |
-| `DB_DIALECT`   | `sqlite`  | Database type: `sqlite` or `postgres` |
-| `DATABASE_URL` | `quiz.db` | Connection string or SQLite file path |
+| Variable       | Required | Description                  |
+| -------------- | -------- | ---------------------------- |
+| `DATABASE_URL` | Yes      | PostgreSQL connection string |
 
-### Connection String Formats
-
-**SQLite:**
-
-```env
-DATABASE_URL=quiz.db
-DATABASE_URL=./data/quiz.db
-DATABASE_URL=/var/lib/quiz-app/quiz.db
-```
-
-**PostgreSQL:**
+### Connection String Format
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
@@ -137,7 +116,7 @@ For production, use migrations for safety and reproducibility:
 # 1. Generate migration from schema changes
 bun run db:generate
 
-# 2. Review generated SQL in drizzle/pg/ or drizzle/sqlite/
+# 2. Review generated SQL in drizzle/pg/
 # 3. Apply migration
 bun run db:migrate
 ```
@@ -160,16 +139,13 @@ The database schema includes the following tables:
 
 ### Schema Files
 
-- `lib/db/schema.ts` - Shared schema exports
-- `lib/db/schema.pg.ts` - PostgreSQL-specific schema
-- `lib/db/schema.sqlite.ts` - SQLite-specific schema
+- `lib/db/schema.ts` - Database schema definitions
 
 ## Migrations
 
 ### Migration Files Location
 
-- PostgreSQL: `drizzle/pg/`
-- SQLite: `drizzle/sqlite/`
+Migrations are stored in `drizzle/pg/`.
 
 ### Creating a Migration
 
@@ -177,7 +153,7 @@ The database schema includes the following tables:
 # Generate migration from current schema
 bun run db:generate
 
-# This creates a new SQL file in drizzle/[dialect]/
+# This creates a new SQL file in drizzle/pg/
 # Review the generated SQL before applying
 ```
 
@@ -192,29 +168,13 @@ Drizzle doesn't have built-in rollback. To revert:
 ### Resetting Database (Development)
 
 ```bash
-# SQLite - delete the file
-rm quiz.db
-bun run db:push
-
-# PostgreSQL - drop and recreate
+# Drop and recreate
 dropdb quiz_app
 createdb quiz_app
 bun run db:migrate
 ```
 
 ## Backup and Restore
-
-### SQLite
-
-```bash
-# Backup
-cp quiz.db quiz.db.backup
-
-# Restore
-cp quiz.db.backup quiz.db
-```
-
-### PostgreSQL
 
 ```bash
 # Backup
