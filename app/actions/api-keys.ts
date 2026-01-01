@@ -2,13 +2,12 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
-import { canManageQuizzes } from "@/lib/auth/permissions";
-import { ALL_API_SCOPES, type ApiScope } from "@/lib/auth/scopes";
+import { canManageApiKeys, hasPermission, ALL_PERMISSIONS, type Permission } from "@/lib/rbac";
 
 interface CreateApiKeyInput {
   name: string;
   expiresInSeconds?: number;
-  permissions: Record<string, string[]>;
+  permissions: Permission[];
 }
 
 interface CreateApiKeyResult {
@@ -26,8 +25,8 @@ export async function createApiKey(input: CreateApiKeyInput): Promise<CreateApiK
     return { success: false, error: "Unauthorized" };
   }
 
-  if (!canManageQuizzes(session.user)) {
-    return { success: false, error: "Only admins can create API keys" };
+  if (!canManageApiKeys(session.user)) {
+    return { success: false, error: "You don't have permission to create API keys" };
   }
 
   if (!input.name.trim()) {
@@ -35,32 +34,45 @@ export async function createApiKey(input: CreateApiKeyInput): Promise<CreateApiK
   }
 
   // Validate permissions
-  const scopeStrings: string[] = [];
-  for (const [resource, actions] of Object.entries(input.permissions)) {
-    for (const action of actions) {
-      scopeStrings.push(`${resource}:${action}`);
-    }
-  }
-
-  if (scopeStrings.length === 0) {
+  if (input.permissions.length === 0) {
     return { success: false, error: "At least one permission is required" };
   }
 
-  // Validate all scopes are valid
-  for (const scope of scopeStrings) {
-    if (!ALL_API_SCOPES.includes(scope as ApiScope)) {
-      return { success: false, error: `Invalid permission: ${scope}` };
+  // Validate all permissions are valid
+  for (const permission of input.permissions) {
+    if (!ALL_PERMISSIONS.includes(permission)) {
+      return { success: false, error: `Invalid permission: ${permission}` };
+    }
+  }
+
+  // Security check: user can only grant permissions they themselves have
+  for (const permission of input.permissions) {
+    if (!hasPermission(session.user, permission)) {
+      return {
+        success: false,
+        error: `You cannot grant the '${permission}' permission because you don't have it`,
+      };
     }
   }
 
   try {
+    // Convert Permission[] to BetterAuth format: { resource: [action, action], ... }
+    const permissionsRecord: Record<string, string[]> = {};
+    for (const permission of input.permissions) {
+      const [resource, action] = permission.split(":");
+      if (!permissionsRecord[resource]) {
+        permissionsRecord[resource] = [];
+      }
+      permissionsRecord[resource].push(action);
+    }
+
     // Call without headers and pass userId directly - this makes it a true server call
     // which allows setting server-only properties like permissions
     const result = await auth.api.createApiKey({
       body: {
         name: input.name.trim(),
         expiresIn: input.expiresInSeconds,
-        permissions: input.permissions,
+        permissions: permissionsRecord,
         userId: session.user.id,
       },
     });
@@ -93,8 +105,8 @@ export async function deleteApiKey(keyId: string): Promise<DeleteApiKeyResult> {
     return { success: false, error: "Unauthorized" };
   }
 
-  if (!canManageQuizzes(session.user)) {
-    return { success: false, error: "Only admins can delete API keys" };
+  if (!canManageApiKeys(session.user)) {
+    return { success: false, error: "You don't have permission to delete API keys" };
   }
 
   try {

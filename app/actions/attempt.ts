@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { quiz, quizAttempt, attemptAnswer, question, answer } from "@/lib/db/schema";
 import type { Question, Answer } from "@/lib/db/schema";
 import { auth } from "@/lib/auth/server";
+import { hasPermission, PERMISSIONS } from "@/lib/rbac";
 import { eq, and, count, sql, asc } from "drizzle-orm";
 
 interface SubmitAttemptData {
@@ -22,6 +23,11 @@ export async function submitQuizAttempt(data: SubmitAttemptData) {
 
   if (!session?.user) {
     return { error: "Unauthorized" };
+  }
+
+  // Check if user has permission to play quizzes
+  if (!hasPermission(session.user, PERMISSIONS.QUIZ_PLAY)) {
+    return { error: "You don't have permission to play quizzes" };
   }
 
   // Get quiz to check max attempts

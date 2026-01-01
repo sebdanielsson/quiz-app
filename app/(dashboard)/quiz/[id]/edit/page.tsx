@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
-import { canEditQuiz } from "@/lib/auth/permissions";
+import { canEditQuiz } from "@/lib/rbac";
 import { getQuizById } from "@/lib/db/queries/quiz";
 import { QuizForm } from "@/components/quiz/quiz-form";
 import { updateQuiz } from "@/app/actions/quiz";

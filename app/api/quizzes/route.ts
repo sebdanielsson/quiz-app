@@ -4,7 +4,7 @@ import { quiz, question, answer } from "@/lib/db/schema";
 import { getQuizzes } from "@/lib/db/queries/quiz";
 import { quizSchema } from "@/lib/validations/quiz";
 import { getApiContext, requirePermission, errorResponse, API_SCOPES } from "@/lib/auth/api";
-import { canManageQuizzes } from "@/lib/auth/permissions";
+import { canCreateQuiz } from "@/lib/rbac";
 
 /**
  * GET /api/quizzes
@@ -39,9 +39,9 @@ export async function POST(request: NextRequest) {
   const permError = requirePermission(ctx, API_SCOPES.QUIZZES_WRITE);
   if (permError) return permError;
 
-  // Additional check: must be admin to create quizzes
-  if (!canManageQuizzes(ctx!.user)) {
-    return errorResponse("Only admins can create quizzes", 403);
+  // Check if user has quiz:create permission
+  if (!canCreateQuiz(ctx!.user)) {
+    return errorResponse("You don't have permission to create quizzes", 403);
   }
 
   let body: unknown;

@@ -4,7 +4,7 @@ import { Brain, Swords, Trophy } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { UserButton } from "@/components/auth/user-button";
 import { auth } from "@/lib/auth/server";
-import { canManageQuizzes } from "@/lib/auth/permissions";
+import { canAccessSettings, isAuthenticated } from "@/lib/rbac";
 import { siteConfig } from "@/lib/config";
 
 export async function Header() {
@@ -12,7 +12,8 @@ export async function Header() {
     headers: await headers(),
   });
 
-  const isAdmin = session?.user ? canManageQuizzes(session.user) : false;
+  const isLoggedIn = isAuthenticated(session?.user);
+  const canAccessAdmin = session?.user ? canAccessSettings(session.user) : false;
 
   return (
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
@@ -41,7 +42,7 @@ export async function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <ThemeToggle />
-          <UserButton isAdmin={isAdmin} />
+          <UserButton isAdmin={canAccessAdmin} isLoggedIn={isLoggedIn} />
         </div>
       </div>
     </header>

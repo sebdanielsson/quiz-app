@@ -8,6 +8,7 @@ import {
   requirePermission,
   errorResponse,
   canEditQuizApi,
+  canDeleteQuizApi,
   API_SCOPES,
 } from "@/lib/auth/api";
 import { eq } from "drizzle-orm";
@@ -157,7 +158,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 
   // Check if user can delete this quiz
-  if (!canEditQuizApi(ctx!, existingQuiz.authorId)) {
+  if (!canDeleteQuizApi(ctx!, existingQuiz.authorId)) {
     return errorResponse("You don't have permission to delete this quiz", 403);
   }
 

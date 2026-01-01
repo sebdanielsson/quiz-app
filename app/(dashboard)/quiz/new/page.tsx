@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
-import { canManageQuizzes } from "@/lib/auth/permissions";
+import { canCreateQuiz } from "@/lib/rbac";
 import { QuizForm } from "@/components/quiz/quiz-form";
 import { createQuiz } from "@/app/actions/quiz";
 
@@ -14,7 +14,7 @@ export default async function NewQuizPage() {
     redirect("/sign-in");
   }
 
-  if (!canManageQuizzes(session.user)) {
+  if (!canCreateQuiz(session.user)) {
     redirect("/");
   }
 

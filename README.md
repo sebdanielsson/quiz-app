@@ -57,9 +57,41 @@ OIDC_ISSUER=https://your-oidc-provider.com
 OIDC_CLIENT_ID=your-client-id
 OIDC_CLIENT_SECRET=your-client-secret
 
-# Admin Group (users in this OIDC group can manage quizzes and API keys)
-OIDC_ADMIN_GROUP=admin
+# Database (optional - defaults to SQLite)
+# DB_DIALECT=postgres
+# DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
 ```
+
+### RBAC Configuration
+
+The app includes a flexible Role-Based Access Control system. See [docs/rbac.md](docs/rbac.md) for full documentation.
+
+**Quick examples:**
+
+```env
+# Public quiz platform (guests can browse, must sign in to play)
+RBAC_PUBLIC_BROWSE_QUIZZES=true
+RBAC_PUBLIC_VIEW_QUIZ=true
+RBAC_PUBLIC_LEADERBOARD=true
+
+# Role mappings (OIDC groups → app roles)
+RBAC_ROLE_ADMIN_GROUPS=admin,staff
+RBAC_ROLE_CREATOR_GROUPS=teachers
+
+# Default role for authenticated users without group mapping
+RBAC_DEFAULT_ROLE=user
+```
+
+| Variable                     | Default   | Description                              |
+| ---------------------------- | --------- | ---------------------------------------- |
+| `RBAC_PUBLIC_BROWSE_QUIZZES` | `false`   | Allow guests to view quiz list           |
+| `RBAC_PUBLIC_VIEW_QUIZ`      | `false`   | Allow guests to view quiz details        |
+| `RBAC_PUBLIC_PLAY_QUIZ`      | `false`   | Allow guests to play (results not saved) |
+| `RBAC_PUBLIC_LEADERBOARD`    | `false`   | Allow guests to view leaderboards        |
+| `RBAC_DEFAULT_ROLE`          | `user`    | Default role for authenticated users     |
+| `RBAC_ROLE_ADMIN_GROUPS`     | `admin`   | OIDC groups that map to admin role       |
+| `RBAC_ROLE_MODERATOR_GROUPS` | _(empty)_ | OIDC groups that map to moderator role   |
+| `RBAC_ROLE_CREATOR_GROUPS`   | _(empty)_ | OIDC groups that map to creator role     |
 
 ### Database Setup
 
@@ -133,9 +165,12 @@ quiz-app/
 │   ├── quiz/             # Quiz-related components
 │   ├── settings/         # API key manager
 │   └── ui/               # Reusable UI components
+├── docs/
+│   └── rbac.md           # RBAC configuration documentation
 └── lib/
     ├── auth/             # Auth configuration & helpers
     ├── db/               # Database schema & queries
+    ├── rbac/             # Role-based access control
     ├── openapi.ts        # OpenAPI 3.1 specification
     └── validations/      # Zod schemas
 ```

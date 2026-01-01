@@ -2,6 +2,15 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth, type User } from "./server";
 import { API_SCOPES, ALL_API_SCOPES, type ApiScope } from "./scopes";
+import {
+  getUserRole,
+  getPermissionsForRole,
+  hasPermission as rbacHasPermission,
+  canEditQuiz as rbacCanEditQuiz,
+  canDeleteQuiz as rbacCanDeleteQuiz,
+  PERMISSIONS,
+  type Permission,
+} from "@/lib/rbac";
 
 // Re-export for convenience
 export { API_SCOPES, ALL_API_SCOPES, type ApiScope } from "./scopes";
@@ -12,6 +21,7 @@ export { API_SCOPES, ALL_API_SCOPES, type ApiScope } from "./scopes";
 export interface ApiContext {
   user: User;
   permissions: ApiScope[];
+  rbacPermissions: Permission[];
   isApiKey: boolean;
 }
 
@@ -20,6 +30,52 @@ export interface ApiContext {
  */
 export function errorResponse(message: string, status: number = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+/**
+ * Map RBAC permissions to API scopes for backwards compatibility
+ */
+function rbacToApiScopes(permissions: Permission[]): ApiScope[] {
+  const scopes: ApiScope[] = [];
+
+  // Quiz read permissions
+  if (
+    permissions.includes(PERMISSIONS.QUIZ_BROWSE) ||
+    permissions.includes(PERMISSIONS.QUIZ_VIEW)
+  ) {
+    scopes.push(API_SCOPES.QUIZZES_READ);
+  }
+
+  // Quiz write permissions
+  if (
+    permissions.includes(PERMISSIONS.QUIZ_CREATE) ||
+    permissions.includes(PERMISSIONS.QUIZ_EDIT_OWN) ||
+    permissions.includes(PERMISSIONS.QUIZ_EDIT_ANY) ||
+    permissions.includes(PERMISSIONS.QUIZ_DELETE_OWN) ||
+    permissions.includes(PERMISSIONS.QUIZ_DELETE_ANY)
+  ) {
+    scopes.push(API_SCOPES.QUIZZES_WRITE);
+  }
+
+  // Attempts read permissions
+  if (permissions.includes(PERMISSIONS.LEADERBOARD_VIEW)) {
+    scopes.push(API_SCOPES.ATTEMPTS_READ);
+  }
+
+  // Attempts write permissions
+  if (
+    permissions.includes(PERMISSIONS.QUIZ_PLAY) ||
+    permissions.includes(PERMISSIONS.LEADERBOARD_SUBMIT)
+  ) {
+    scopes.push(API_SCOPES.ATTEMPTS_WRITE);
+  }
+
+  // Admin gets all scopes
+  if (permissions.includes(PERMISSIONS.ADMIN_ALL)) {
+    return [...ALL_API_SCOPES];
+  }
+
+  return [...new Set(scopes)];
 }
 
 /**
@@ -49,10 +105,16 @@ export async function getApiContext(): Promise<ApiContext | null> {
       // If enableSessionForAPIKey is working, we should have a session
       // Otherwise, we need to fetch the user manually
       if (session?.user) {
-        const permissions = parsePermissions(result.key.permissions);
+        // API key permissions are now derived from the user's current role
+        // This ensures config changes take effect immediately
+        const role = getUserRole(session.user);
+        const rbacPermissions = getPermissionsForRole(role);
+        const apiScopes = rbacToApiScopes(rbacPermissions);
+
         return {
           user: session.user,
-          permissions,
+          permissions: apiScopes,
+          rbacPermissions,
           isApiKey: true,
         };
       }
@@ -75,74 +137,31 @@ export async function getApiContext(): Promise<ApiContext | null> {
     return null;
   }
 
-  // Session-based auth gets full permissions based on user role
-  // Check if user is admin to determine permissions
-  const isAdmin = checkIsAdmin(session.user);
+  // Session-based auth gets permissions based on user's resolved role
+  const role = getUserRole(session.user);
+  const rbacPermissions = getPermissionsForRole(role);
+  const apiScopes = rbacToApiScopes(rbacPermissions);
 
   return {
     user: session.user,
-    permissions: isAdmin
-      ? ALL_API_SCOPES
-      : [API_SCOPES.QUIZZES_READ, API_SCOPES.ATTEMPTS_READ, API_SCOPES.ATTEMPTS_WRITE],
+    permissions: apiScopes,
+    rbacPermissions,
     isApiKey: false,
   };
 }
 
 /**
- * Check if user belongs to admin group (based on OIDC groups claim)
- */
-function checkIsAdmin(user: User): boolean {
-  const groupsField = (user as { groups?: string | null }).groups;
-  if (!groupsField) return false;
-
-  try {
-    const groups: string[] = JSON.parse(groupsField);
-    const adminGroup = process.env.OIDC_ADMIN_GROUP ?? "admin";
-    return groups.includes(adminGroup);
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Parse permissions from API key
- */
-function parsePermissions(permissions: unknown): ApiScope[] {
-  if (!permissions) return [];
-
-  // BetterAuth stores permissions as an object like { "quizzes": ["read", "write"] }
-  // or as an array of strings like ["quizzes:read", "quizzes:write"]
-  if (Array.isArray(permissions)) {
-    return permissions.filter(
-      (p): p is ApiScope => typeof p === "string" && ALL_API_SCOPES.includes(p as ApiScope),
-    );
-  }
-
-  if (typeof permissions === "object" && permissions !== null) {
-    const perms: ApiScope[] = [];
-    const permObj = permissions as Record<string, string[]>;
-
-    for (const [resource, actions] of Object.entries(permObj)) {
-      if (Array.isArray(actions)) {
-        for (const action of actions) {
-          const scope = `${resource}:${action}` as ApiScope;
-          if (ALL_API_SCOPES.includes(scope)) {
-            perms.push(scope);
-          }
-        }
-      }
-    }
-    return perms;
-  }
-
-  return [];
-}
-
-/**
- * Check if context has required permission
+ * Check if context has required API scope permission
  */
 export function hasPermission(ctx: ApiContext, scope: ApiScope): boolean {
   return ctx.permissions.includes(scope);
+}
+
+/**
+ * Check if context has required RBAC permission
+ */
+export function hasRbacPermission(ctx: ApiContext, permission: Permission): boolean {
+  return rbacHasPermission(ctx.user, permission);
 }
 
 /**
@@ -161,8 +180,15 @@ export function requirePermission(ctx: ApiContext | null, scope: ApiScope): Next
 }
 
 /**
- * Check if user can edit a specific quiz (author or admin)
+ * Check if user can edit a specific quiz (author or has quiz:edit-any permission)
  */
 export function canEditQuizApi(ctx: ApiContext, authorId: string): boolean {
-  return ctx.user.id === authorId || checkIsAdmin(ctx.user);
+  return rbacCanEditQuiz(ctx.user, authorId);
+}
+
+/**
+ * Check if user can delete a specific quiz (author or has quiz:delete-any permission)
+ */
+export function canDeleteQuizApi(ctx: ApiContext, authorId: string): boolean {
+  return rbacCanDeleteQuiz(ctx.user, authorId);
 }
