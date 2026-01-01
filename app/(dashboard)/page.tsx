@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth/server";
-import { canManageQuizzes } from "@/lib/auth/permissions";
+import { canAccess, canCreateQuiz, isAdmin as checkIsAdmin } from "@/lib/rbac";
 import { getQuizzes } from "@/lib/db/queries/quiz";
 import { dialect } from "@/lib/db";
 import { checkDatabaseHealth } from "@/lib/db/health";
@@ -34,7 +35,13 @@ export default async function HomePage({ searchParams }: PageProps) {
     headers: await headers(),
   });
 
-  const isAdmin = canManageQuizzes(session?.user);
+  // Check if user can access this page (browse quizzes)
+  if (!canAccess(session?.user, "browseQuizzes")) {
+    redirect("/sign-in");
+  }
+
+  const isAdmin = checkIsAdmin(session?.user);
+  const canCreate = canCreateQuiz(session?.user);
   const { items: quizzes, totalPages, currentPage } = await getQuizzes(page, 30, isAdmin);
 
   return (
@@ -46,7 +53,7 @@ export default async function HomePage({ searchParams }: PageProps) {
             Test your knowledge with our collection of quizzes
           </p>
         </div>
-        {isAdmin && (
+        {canCreate && (
           <Link href="/quiz/new">
             <Button>
               <Plus />
@@ -59,7 +66,7 @@ export default async function HomePage({ searchParams }: PageProps) {
       {quizzes.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-muted-foreground text-lg">No quizzes available yet.</p>
-          {isAdmin && (
+          {canCreate && (
             <Link href="/quiz/new">
               <Button className="mt-4">Create the first quiz</Button>
             </Link>

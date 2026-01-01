@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Book, LogOut, Settings } from "lucide-react";
+import { Book, LogIn, LogOut, Settings } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,13 +19,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserButtonProps {
   isAdmin?: boolean;
+  isLoggedIn?: boolean;
 }
 
-export function UserButton({ isAdmin = false }: UserButtonProps) {
+export function UserButton({ isAdmin = false, isLoggedIn = false }: UserButtonProps) {
   const { data: session, isPending } = useSession();
 
   if (isPending) {
     return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
+
+  // Show sign-in button for guests (when not logged in)
+  if (!session && !isLoggedIn) {
+    return (
+      <Link href="/sign-in">
+        <Button variant="outline" size="sm">
+          <LogIn className="mr-2 h-4 w-4" />
+          Sign in
+        </Button>
+      </Link>
+    );
   }
 
   if (!session) {

@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { Trophy } from "lucide-react";
 import { auth } from "@/lib/auth/server";
+import { canAccess } from "@/lib/rbac";
 import { getGlobalLeaderboard } from "@/lib/db/queries/quiz";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GlobalLeaderboard } from "@/components/quiz/global-leaderboard";
@@ -45,6 +47,11 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
+
+  // Check if user can access leaderboard
+  if (!canAccess(session?.user, "leaderboard")) {
+    redirect("/sign-in");
+  }
 
   const leaderboard = await getGlobalLeaderboard(page);
 

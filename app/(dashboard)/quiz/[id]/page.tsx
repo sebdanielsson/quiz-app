@@ -1,11 +1,17 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { Calendar, Clock, HelpCircle, Play, Pencil, Users, SettingsIcon } from "lucide-react";
 import { auth } from "@/lib/auth/server";
-import { canEditQuiz, canManageQuizzes } from "@/lib/auth/permissions";
+import {
+  canAccess,
+  canEditQuiz,
+  canDeleteQuiz,
+  canPlayQuiz,
+  isAdmin as checkIsAdmin,
+} from "@/lib/rbac";
 import { getQuizById, getQuizLeaderboard, getUserAttemptCount } from "@/lib/db/queries/quiz";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -74,13 +80,18 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
     headers: await headers(),
   });
 
+  // Check if user can access this page (view quiz)
+  if (!canAccess(session?.user, "viewQuiz")) {
+    redirect("/sign-in");
+  }
+
   const quiz = await getQuizById(id);
 
   if (!quiz) {
     notFound();
   }
 
-  const isAdmin = canManageQuizzes(session?.user);
+  const isAdmin = checkIsAdmin(session?.user);
 
   // Non-admins cannot view unpublished quizzes (publishedAt in the future)
   if (!isAdmin && quiz.publishedAt && quiz.publishedAt > new Date()) {
@@ -88,9 +99,11 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
   }
 
   const canEdit = canEditQuiz(session?.user, quiz.authorId);
+  const canDelete = canDeleteQuiz(session?.user, quiz.authorId);
+  const canPlay = canPlayQuiz(session?.user);
   const userAttemptCount = session?.user ? await getUserAttemptCount(id, session.user.id) : 0;
   const attemptsRemaining = quiz.maxAttempts - userAttemptCount;
-  const canPlay = attemptsRemaining > 0;
+  const hasAttemptsRemaining = attemptsRemaining > 0;
 
   const leaderboard = await getQuizLeaderboard(id, page);
 
@@ -148,10 +161,16 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
 
           <ButtonGroup>
             <ButtonGroup>
-              {canPlay ? (
+              {canPlay && hasAttemptsRemaining ? (
                 <Link href={`/quiz/${id}/play`}>
                   <Button size="lg">
                     <Play className="h-4 w-4" /> Start Quiz
+                  </Button>
+                </Link>
+              ) : !canPlay ? (
+                <Link href="/sign-in">
+                  <Button size="lg" variant="outline">
+                    Sign in to play
                   </Button>
                 </Link>
               ) : (
@@ -159,7 +178,7 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
               )}
             </ButtonGroup>
 
-            {canEdit && (
+            {(canEdit || canDelete) && (
               <ButtonGroup>
                 <DropdownMenu>
                   <DropdownMenuTrigger
@@ -173,13 +192,15 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52">
                     <DropdownMenuGroup>
-                      <DropdownMenuItem>
-                        <Link href={`/quiz/${id}/edit`} className="flex items-center gap-2">
-                          <Pencil className="h-4 w-4" />
-                          Edit
-                        </Link>
-                      </DropdownMenuItem>
-                      <DeleteQuizButton quizId={id} />
+                      {canEdit && (
+                        <DropdownMenuItem>
+                          <Link href={`/quiz/${id}/edit`} className="flex items-center gap-2">
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      {canDelete && <DeleteQuizButton quizId={id} />}
                     </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>
