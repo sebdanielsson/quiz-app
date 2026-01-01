@@ -70,7 +70,7 @@ export async function getQuizzes(
     .limit(limit)
     .offset(offset);
 
-  const items = quizzes.map((q: { quiz: Quiz; questionCount: number; author: User }) => ({
+  const items = quizzes.map((q) => ({
     ...q.quiz,
     questionCount: q.questionCount,
     author: q.author,
@@ -273,10 +273,7 @@ export async function getAttemptById(attemptId: string): Promise<AttemptWithRela
         with: {
           answer: true,
         },
-        orderBy: (
-          answers: { displayOrder: unknown },
-          { asc: ascFn }: { asc: (col: unknown) => unknown },
-        ) => [ascFn(answers.displayOrder)],
+        orderBy: (answers, { asc: ascFn }) => [ascFn(answers.displayOrder)],
       },
     },
   });

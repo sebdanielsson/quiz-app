@@ -18,7 +18,7 @@ A modern, full-stack quiz application built with Next.js 16, featuring OIDC auth
 
 - **Framework**: Next.js 16 (App Router, Turbopack)
 - **Runtime**: Bun
-- **Database**: SQLite or PostgreSQL with Drizzle ORM
+- **Database**: PostgreSQL with Drizzle ORM (via bun:sql)
 - **Auth**: BetterAuth with OIDC + API Key plugins
 - **UI**: shadcn/ui (Base UI - Vega), Lucide Icons
 - **Validation**: Zod
@@ -57,9 +57,8 @@ OIDC_ISSUER=https://your-oidc-provider.com
 OIDC_CLIENT_ID=your-client-id
 OIDC_CLIENT_SECRET=your-client-secret
 
-# Database (optional - defaults to SQLite)
-# DB_DIALECT=postgres
-# DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
+# Database (PostgreSQL required)
+DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
 ```
 
 ### RBAC Configuration
@@ -95,29 +94,17 @@ RBAC_DEFAULT_ROLE=user
 
 ### Database Setup
 
-The app supports both SQLite (default) and PostgreSQL. Set the `DB_DIALECT` environment variable to choose your database.
-
-#### SQLite (Default)
+The app uses PostgreSQL with Bun's native SQL driver (`bun:sql`).
 
 ```bash
-# No additional setup needed, just push the schema
-bun --bun run db:push
+# Start PostgreSQL (via Docker Compose)
+docker compose up -d
 
-# Or use migrations
-bun --bun run db:generate
-bun --bun run db:migrate
-```
+# Run migrations
+bun run db:migrate
 
-#### PostgreSQL
-
-```bash
-# Set environment variables
-export DB_DIALECT=postgres
-export DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
-
-# Generate and run migrations
-bun --bun run db:generate
-bun --bun run db:migrate
+# Or push schema directly (development)
+bun run db:push
 ```
 
 ### Development

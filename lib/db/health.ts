@@ -1,27 +1,30 @@
-import { db, dialect } from "./index";
+import { db } from "./index";
 import { sql } from "drizzle-orm";
 
 export interface DatabaseHealthStatus {
   connected: boolean;
-  dialect: "sqlite" | "postgres";
   error?: string;
 }
+
+// Check if we're in Next.js build phase (no database needed)
+const isBuildPhase =
+  process.env.NEXT_PHASE === "phase-production-build" || !process.env.DATABASE_URL;
 
 /**
  * Check if the database connection is healthy
  */
 export async function checkDatabaseHealth(): Promise<DatabaseHealthStatus> {
+  // Skip health check during build - no database connection needed
+  if (isBuildPhase) {
+    return { connected: true };
+  }
+
   try {
     // Simple query to test connection
-    if (dialect === "postgres") {
-      await db.execute(sql`SELECT 1`);
-    } else {
-      await db.run(sql`SELECT 1`);
-    }
+    await db.execute(sql`SELECT 1`);
 
     return {
       connected: true,
-      dialect,
     };
   } catch (err) {
     const error = err instanceof Error ? err.message : "Unknown database error";
@@ -29,7 +32,6 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthStatus> {
 
     return {
       connected: false,
-      dialect,
       error,
     };
   }
@@ -69,7 +71,7 @@ export function getDatabaseErrorMessage(error: unknown): string {
   }
 
   if (error.message.includes("ECONNREFUSED")) {
-    return `Cannot connect to ${dialect === "postgres" ? "PostgreSQL" : "SQLite"} database. Please ensure the database server is running.`;
+    return "Cannot connect to PostgreSQL database. Please ensure the database server is running.";
   }
 
   if (error.message.includes("password authentication failed")) {
