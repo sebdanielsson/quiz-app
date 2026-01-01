@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/lib/db";
 import { quiz, quizAttempt, user, question, answer } from "@/lib/db/schema";
 import type { Quiz, Question, Answer, User, QuizAttempt, AttemptAnswer } from "@/lib/db/schema";
@@ -338,3 +339,40 @@ export async function getAttemptById(attemptId: string): Promise<AttemptWithRela
     answers: enrichedAnswers,
   } as AttemptWithRelations;
 }
+
+// ============================================================================
+// Memoized Query Wrappers (for OG image generation + generateMetadata)
+// These use React's cache() to deduplicate requests within the same render pass
+// ============================================================================
+
+/**
+ * Memoized version of getQuizById - shares data between generateMetadata and OG image
+ */
+export const getCachedQuizById = cache(async (quizId: string) => {
+  return getQuizById(quizId);
+});
+
+/**
+ * Memoized version of getQuizLeaderboard - shares data between page and OG image
+ */
+export const getCachedQuizLeaderboard = cache(
+  async (quizId: string, page: number = 1, limit: number = ITEMS_PER_PAGE) => {
+    return getQuizLeaderboard(quizId, page, limit);
+  },
+);
+
+/**
+ * Memoized version of getGlobalLeaderboard - shares data between page and OG image
+ */
+export const getCachedGlobalLeaderboard = cache(
+  async (page: number = 1, limit: number = ITEMS_PER_PAGE) => {
+    return getGlobalLeaderboard(page, limit);
+  },
+);
+
+/**
+ * Memoized version of getAttemptById - shares data between page and OG image
+ */
+export const getCachedAttemptById = cache(async (attemptId: string) => {
+  return getAttemptById(attemptId);
+});
