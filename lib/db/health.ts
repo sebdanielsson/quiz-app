@@ -6,10 +6,19 @@ export interface DatabaseHealthStatus {
   error?: string;
 }
 
+// Check if we're in Next.js build phase (no database needed)
+const isBuildPhase =
+  process.env.NEXT_PHASE === "phase-production-build" || !process.env.DATABASE_URL;
+
 /**
  * Check if the database connection is healthy
  */
 export async function checkDatabaseHealth(): Promise<DatabaseHealthStatus> {
+  // Skip health check during build - no database connection needed
+  if (isBuildPhase) {
+    return { connected: true };
+  }
+
   try {
     // Simple query to test connection
     await db.execute(sql`SELECT 1`);
