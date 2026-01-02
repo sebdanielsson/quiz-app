@@ -76,7 +76,7 @@ export function QuizCard({ quiz }: QuizCardProps) {
       </CardContent>
       <CardFooter>
         <Link href={`/quiz/${quiz.id}`}>
-          <Button>View Quiz</Button>
+          <Button className="w-full">View Quiz</Button>
         </Link>
       </CardFooter>
     </Card>
