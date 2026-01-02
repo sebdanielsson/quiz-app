@@ -199,8 +199,36 @@ async function triggerDownload(downloadLocationUrl: string): Promise<void> {
     return;
   }
 
+  // Validate and reconstruct the URL to prevent SSRF attacks
+  let safeUrl: string;
   try {
-    await fetch(downloadLocationUrl, {
+    const parsed = new URL(downloadLocationUrl);
+
+    // Validate protocol - only HTTPS allowed
+    if (parsed.protocol !== "https:") {
+      console.warn("[Unsplash] Refusing non-HTTPS download tracking URL");
+      return;
+    }
+
+    // Validate hostname - only Unsplash domains allowed
+    const hostname = parsed.hostname.toLowerCase();
+    const isUnsplashHost = hostname === "api.unsplash.com" || hostname.endsWith(".unsplash.com");
+
+    if (!isUnsplashHost) {
+      console.warn("[Unsplash] Refusing non-Unsplash download tracking URL:", hostname);
+      return;
+    }
+
+    // Rebuild URL with trusted base to prevent SSRF
+    const normalized = new URL(parsed.pathname + parsed.search, UNSPLASH_API_BASE);
+    safeUrl = normalized.toString();
+  } catch {
+    console.warn("[Unsplash] Invalid download tracking URL:", downloadLocationUrl);
+    return;
+  }
+
+  try {
+    await fetch(safeUrl, {
       headers: {
         Authorization: `Client-ID ${apiKey}`,
         "Accept-Version": "v1",

@@ -132,8 +132,19 @@ export async function searchImagesAction(
  */
 export async function triggerImageDownload(downloadTrackingUrl: string): Promise<void> {
   // Currently only Unsplash requires download tracking
-  // The URL format tells us which provider it's from
-  if (downloadTrackingUrl.includes("unsplash.com")) {
-    await triggerUnsplashDownload(downloadTrackingUrl);
+  // Validate the URL to prevent SSRF attacks
+  try {
+    const url = new URL(downloadTrackingUrl);
+    const hostname = url.hostname.toLowerCase();
+
+    // Only allow HTTPS requests to verified Unsplash domains
+    const isHttps = url.protocol === "https:";
+    const isUnsplashHost = hostname === "api.unsplash.com" || hostname.endsWith(".unsplash.com");
+
+    if (isHttps && isUnsplashHost) {
+      await triggerUnsplashDownload(downloadTrackingUrl);
+    }
+  } catch {
+    // Ignore invalid URLs - download tracking is best-effort
   }
 }
