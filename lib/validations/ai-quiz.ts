@@ -114,7 +114,7 @@ Requirements:
 - Each question must have exactly ${input.answerCount} answer options
 - Exactly ONE answer per question must be marked as correct (isCorrect: true)
 - All content must be in ${languageName}
-- Use only ASCII characters (no emojis, smart quotes, or special punctuation)
+- You may use any characters required for ${languageName}, but avoid emojis, EM dashes, novelty symbols, and smart quotes; use plain text punctuation
 - Title should be catchy and descriptive (max 200 characters)
 - Description should summarize what the quiz covers (max 1000 characters)
 
