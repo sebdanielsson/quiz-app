@@ -191,6 +191,13 @@ async function search(
  *
  * @param downloadLocationUrl - The download_location URL from the photo
  */
+/**
+ * Regex to extract photo ID from Unsplash download_location URLs.
+ * Valid format: https://api.unsplash.com/photos/{photoId}/download
+ * Photo IDs are alphanumeric with hyphens and underscores, typically 11 chars.
+ */
+const DOWNLOAD_URL_PATTERN = /^https:\/\/api\.unsplash\.com\/photos\/([a-zA-Z0-9_-]+)\/download$/;
+
 async function triggerDownload(downloadLocationUrl: string): Promise<void> {
   const apiKey = getApiKey("unsplash");
 
@@ -199,33 +206,19 @@ async function triggerDownload(downloadLocationUrl: string): Promise<void> {
     return;
   }
 
-  // Validate and reconstruct the URL to prevent SSRF attacks
-  let safeUrl: string;
-  try {
-    const parsed = new URL(downloadLocationUrl);
+  // Extract and validate the photo ID from the URL to prevent SSRF attacks
+  // We only accept URLs matching the exact Unsplash download endpoint pattern
+  const match = downloadLocationUrl.match(DOWNLOAD_URL_PATTERN);
 
-    // Validate protocol - only HTTPS allowed
-    if (parsed.protocol !== "https:") {
-      console.warn("[Unsplash] Refusing non-HTTPS download tracking URL");
-      return;
-    }
-
-    // Validate hostname - only Unsplash domains allowed
-    const hostname = parsed.hostname.toLowerCase();
-    const isUnsplashHost = hostname === "api.unsplash.com" || hostname.endsWith(".unsplash.com");
-
-    if (!isUnsplashHost) {
-      console.warn("[Unsplash] Refusing non-Unsplash download tracking URL:", hostname);
-      return;
-    }
-
-    // Rebuild URL with trusted base to prevent SSRF
-    const normalized = new URL(parsed.pathname + parsed.search, UNSPLASH_API_BASE);
-    safeUrl = normalized.toString();
-  } catch {
-    console.warn("[Unsplash] Invalid download tracking URL:", downloadLocationUrl);
+  if (!match) {
+    console.warn("[Unsplash] Invalid download tracking URL format:", downloadLocationUrl);
     return;
   }
+
+  const photoId = match[1];
+
+  // Construct a safe URL using only the validated photo ID and our trusted base
+  const safeUrl = `${UNSPLASH_API_BASE}/photos/${photoId}/download`;
 
   try {
     await fetch(safeUrl, {

@@ -125,6 +125,13 @@ export async function searchImagesAction(
 }
 
 /**
+ * Regex to validate Unsplash download_location URLs.
+ * Valid format: https://api.unsplash.com/photos/{photoId}/download
+ */
+const UNSPLASH_DOWNLOAD_URL_PATTERN =
+  /^https:\/\/api\.unsplash\.com\/photos\/[a-zA-Z0-9_-]+\/download$/;
+
+/**
  * Trigger download tracking when a user selects an image.
  * Required by Unsplash API guidelines.
  *
@@ -132,19 +139,8 @@ export async function searchImagesAction(
  */
 export async function triggerImageDownload(downloadTrackingUrl: string): Promise<void> {
   // Currently only Unsplash requires download tracking
-  // Validate the URL to prevent SSRF attacks
-  try {
-    const url = new URL(downloadTrackingUrl);
-    const hostname = url.hostname.toLowerCase();
-
-    // Only allow HTTPS requests to verified Unsplash domains
-    const isHttps = url.protocol === "https:";
-    const isUnsplashHost = hostname === "api.unsplash.com" || hostname.endsWith(".unsplash.com");
-
-    if (isHttps && isUnsplashHost) {
-      await triggerUnsplashDownload(downloadTrackingUrl);
-    }
-  } catch {
-    // Ignore invalid URLs - download tracking is best-effort
+  // Validate the URL matches the exact expected Unsplash download endpoint pattern
+  if (UNSPLASH_DOWNLOAD_URL_PATTERN.test(downloadTrackingUrl)) {
+    await triggerUnsplashDownload(downloadTrackingUrl);
   }
 }
