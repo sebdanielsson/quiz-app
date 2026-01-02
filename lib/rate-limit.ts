@@ -33,16 +33,48 @@ function startCleanup() {
   ); // Every 5 minutes
 }
 
+function stopCleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+}
+
 // Start cleanup on module load
 startCleanup();
+
+// Ensure cleanup interval is cleared on process shutdown
+if (typeof process !== "undefined" && typeof process.on === "function") {
+  process.on("beforeExit", stopCleanup);
+  process.on("SIGINT", stopCleanup);
+  process.on("SIGTERM", stopCleanup);
+}
+
+/**
+ * Parse a positive integer from an environment variable, with validation.
+ * Returns the default value if the env var is undefined, NaN, or less than 1.
+ */
+function parsePositiveIntEnv(value: string | undefined, defaultValue: number): number {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  const parsed = parseInt(value, 10);
+
+  if (!Number.isFinite(parsed) || Number.isNaN(parsed) || parsed < 1) {
+    return defaultValue;
+  }
+
+  return parsed;
+}
 
 /**
  * Get rate limit configuration from environment variables.
  */
 function getRateLimitConfig() {
   return {
-    maxPlays: parseInt(process.env.RATE_LIMIT_GUEST_PLAYS ?? "5", 10),
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10),
+    maxPlays: parsePositiveIntEnv(process.env.RATE_LIMIT_GUEST_PLAYS, 5),
+    windowMs: parsePositiveIntEnv(process.env.RATE_LIMIT_WINDOW_MS, 60000),
   };
 }
 
@@ -64,6 +96,10 @@ export function checkGuestRateLimit(ip: string): {
 
   // No entry or window expired - create new entry
   if (!entry || now > entry.resetTime) {
+    // Delete expired entry if it exists to free memory immediately
+    if (entry) {
+      guestPlayCounts.delete(ip);
+    }
     guestPlayCounts.set(ip, { count: 1, resetTime: now + windowMs });
     return { allowed: true, remaining: maxPlays - 1, resetInMs: windowMs };
   }

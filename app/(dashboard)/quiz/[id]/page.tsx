@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Calendar, Clock, HelpCircle, Play, Users } from "lucide-react";
+import { AlertCircle, Calendar, Clock, HelpCircle, Play, Users } from "lucide-react";
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth/server";
 import {
@@ -19,13 +19,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { QuizLeaderboard } from "@/components/quiz/quiz-leaderboard";
 import { PaginationControls } from "@/components/layout/pagination-controls";
 import { QuizActionsMenu } from "./delete-quiz-button";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; error?: string; retry?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function QuizDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, error, retry } = await searchParams;
   const page = parseInt(pageParam ?? "1", 10);
 
   const session = await auth.api.getSession({
@@ -87,8 +88,33 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
     return `${Math.floor(seconds / 60)} minutes`;
   };
 
+  // Generate error message based on error type
+  const getErrorMessage = () => {
+    switch (error) {
+      case "rate-limit":
+        return `You've played too many quizzes recently. Please try again in ${retry ?? "a few"} seconds.`;
+      case "no-attempts":
+        return "You have no attempts remaining for this quiz.";
+      case "ip-missing":
+        return "Unable to verify your connection. Please try again or sign in to play.";
+      default:
+        return null;
+    }
+  };
+
+  const errorMessage = getErrorMessage();
+
   return (
     <div className="mx-auto max-w-5xl space-y-8">
+      {/* Error Alert */}
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Unable to start quiz</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Hero Section */}
       <div className="relative">
         {quiz.heroImageUrl && (

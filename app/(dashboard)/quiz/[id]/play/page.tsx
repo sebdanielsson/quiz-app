@@ -37,7 +37,15 @@ export default async function PlayQuizPage({ params }: PageProps) {
 
   // Rate limit for guests
   if (isGuest) {
-    const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    // Use x-real-ip (Vercel/most proxies) or first IP from x-forwarded-for
+    const ip =
+      headersList.get("x-real-ip") || headersList.get("x-forwarded-for")?.split(",")[0]?.trim();
+
+    // Reject requests without a valid IP to prevent shared rate limit bucket
+    if (!ip) {
+      redirect(`/quiz/${id}?error=ip-missing`);
+    }
+
     const { allowed, resetInMs } = checkGuestRateLimit(ip);
     if (!allowed) {
       const resetInSeconds = Math.ceil(resetInMs / 1000);
