@@ -188,7 +188,7 @@ export function ImagePickerDialog({ open, onOpenChange, onSelect }: ImagePickerD
             Search Images
           </DialogTitle>
           <DialogDescription>
-            Search for images to add to your quiz. Images are provided by Unsplash.
+            Search for images to add to your quiz. Images are provided by third-party services.
           </DialogDescription>
         </DialogHeader>
 
