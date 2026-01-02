@@ -35,6 +35,10 @@ function startCleanup() {
           aiUserCounts.delete(userId);
         }
       }
+      // Reset global AI count if window expired
+      if (now > aiGlobalCount.resetTime) {
+        aiGlobalCount.count = 0;
+      }
     },
     5 * 60 * 1000,
   ); // Every 5 minutes
