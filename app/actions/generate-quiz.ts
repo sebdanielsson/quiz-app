@@ -139,25 +139,19 @@ export async function generateQuizWithAI(input: AIQuizInput): Promise<GenerateQu
       );
     }
 
-    // Ensure each question has exactly one correct answer
-    for (const question of quiz.questions) {
+    // Validate each question has exactly one correct answer
+    for (let i = 0; i < quiz.questions.length; i++) {
+      const question = quiz.questions[i];
       const correctCount = question.answers.filter((a) => a.isCorrect).length;
       if (correctCount !== 1) {
-        // Fix: ensure exactly one correct answer
-        question.answers.forEach((a, i) => {
-          a.isCorrect = i === 0;
-        });
-        if (correctCount > 1) {
-          // Keep only the first correct one
-          let foundCorrect = false;
-          question.answers.forEach((a) => {
-            if (a.isCorrect && foundCorrect) {
-              a.isCorrect = false;
-            } else if (a.isCorrect) {
-              foundCorrect = true;
-            }
-          });
-        }
+        console.error(
+          `[AI] Question ${i + 1} has ${correctCount} correct answers, expected exactly 1`,
+        );
+        return {
+          success: false,
+          error: `AI generated an invalid quiz (question ${i + 1} has ${correctCount} correct answers instead of 1). Please try again.`,
+          errorCode: "AI_ERROR",
+        };
       }
     }
 
