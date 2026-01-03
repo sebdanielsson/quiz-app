@@ -1,3 +1,8 @@
+import { SUPPORTED_LANGUAGES, DIFFICULTY_LEVELS } from "@/lib/validations/quiz";
+
+// Extract language codes for OpenAPI enum
+const languageCodes = SUPPORTED_LANGUAGES.map((l) => l.code);
+
 export const openApiSpec = {
   openapi: "3.1.0",
   info: {
@@ -103,9 +108,19 @@ export const openApiSpec = {
         properties: {
           id: { type: "string", format: "uuid" },
           title: { type: "string" },
-          description: { type: "string", nullable: true },
-          heroImageUrl: { type: "string", nullable: true },
+          description: { type: "string" },
+          heroImageUrl: { type: "string" },
           authorId: { type: "string", format: "uuid" },
+          language: {
+            type: "string",
+            enum: languageCodes,
+            description: "Quiz language (ISO 639-1 code)",
+          },
+          difficulty: {
+            type: "string",
+            enum: DIFFICULTY_LEVELS,
+            description: "Quiz difficulty level",
+          },
           maxAttempts: { type: "integer", minimum: 1 },
           timeLimitSeconds: { type: "integer", minimum: 0, description: "0 = unlimited" },
           randomizeQuestions: { type: "boolean" },
@@ -153,6 +168,16 @@ export const openApiSpec = {
           title: { type: "string", minLength: 1, maxLength: 200 },
           description: { type: "string", maxLength: 1000 },
           heroImageUrl: { type: "string", format: "uri" },
+          language: {
+            type: "string",
+            enum: languageCodes,
+            description: "Quiz language (ISO 639-1 code)",
+          },
+          difficulty: {
+            type: "string",
+            enum: DIFFICULTY_LEVELS,
+            description: "Quiz difficulty level",
+          },
           maxAttempts: { type: "integer", minimum: 1, default: 1 },
           timeLimitSeconds: { type: "integer", minimum: 0, default: 0 },
           randomizeQuestions: { type: "boolean", default: true },
@@ -169,7 +194,7 @@ export const openApiSpec = {
             minItems: 1,
           },
         },
-        required: ["title", "questions"],
+        required: ["title", "description", "heroImageUrl", "language", "difficulty", "questions"],
       },
       Attempt: {
         type: "object",

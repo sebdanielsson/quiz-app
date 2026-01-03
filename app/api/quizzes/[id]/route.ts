@@ -90,8 +90,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       .update(quiz)
       .set({
         title: validData.title,
-        description: validData.description || null,
-        heroImageUrl: validData.heroImageUrl || null,
+        description: validData.description,
+        heroImageUrl: validData.heroImageUrl,
+        language: validData.language,
+        difficulty: validData.difficulty,
         maxAttempts: validData.maxAttempts,
         timeLimitSeconds: validData.timeLimitSeconds,
         randomizeQuestions: validData.randomizeQuestions,

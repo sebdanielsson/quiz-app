@@ -65,9 +65,11 @@ export async function POST(request: NextRequest) {
       .insert(quiz)
       .values({
         title: validData.title,
-        description: validData.description || null,
-        heroImageUrl: validData.heroImageUrl || null,
+        description: validData.description,
+        heroImageUrl: validData.heroImageUrl,
         authorId: ctx!.user.id,
+        language: validData.language,
+        difficulty: validData.difficulty,
         maxAttempts: validData.maxAttempts,
         timeLimitSeconds: validData.timeLimitSeconds,
         randomizeQuestions: validData.randomizeQuestions,
