@@ -18,8 +18,8 @@ export async function Header() {
   return (
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
       <div className="container mx-auto flex h-14 items-center px-4">
-        <div className="mr-4 flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
+        <div className="flex gap-4">
+          <Link href="/" className="flex items-center gap-2">
             <Brain className="h-6 w-6" />
             <span className="hidden font-bold sm:block">{siteConfig.name}</span>
           </Link>
@@ -40,7 +40,7 @@ export async function Header() {
             </Link>
           </nav>
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-2">
+        <div className="flex flex-1 items-center justify-end gap-2">
           <ThemeToggle />
           <UserButton isAdmin={canAccessAdmin} isLoggedIn={isLoggedIn} />
         </div>

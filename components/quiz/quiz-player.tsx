@@ -205,11 +205,11 @@ export function QuizPlayer({
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-2 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">{quizTitle}</h1>
+      <div className="flex flex-row items-center justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-lg font-bold sm:text-xl">{quizTitle}</h1>
           <p className="text-muted-foreground text-sm">
             Question {currentQuestionIndex + 1} of {questions.length}
           </p>
@@ -220,13 +220,13 @@ export function QuizPlayer({
               variant={timeRemainingMs! < 30000 ? "destructive" : "secondary"}
               className="px-3 py-1 text-lg"
             >
-              <Clock className="mr-1 h-4 w-4" />
+              <Clock className="h-4 w-4" />
               {formatTime(timeRemainingMs!)}
             </Badge>
           )}
           {!hasTimeLimit && (
             <Badge variant="secondary" className="px-3 py-1 text-lg">
-              <Clock className="mr-1 h-4 w-4" />
+              <Clock className="h-4 w-4" />
               {formatTime(elapsedMs)}
             </Badge>
           )}
@@ -245,9 +245,9 @@ export function QuizPlayer({
       {/* Question Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{currentQuestion.text}</CardTitle>
+          <CardTitle className="text-base sm:text-lg">{currentQuestion.text}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="flex flex-col gap-2">
           {currentQuestion.imageUrl && (
             <div className="relative aspect-video w-full overflow-hidden rounded-lg">
               <Image
@@ -269,7 +269,7 @@ export function QuizPlayer({
               const showCorrectness = showFeedback;
 
               let className =
-                "flex items-center space-x-3 p-4 rounded-lg border transition-colors ";
+                "flex items-center space-x-3 p-4 rounded-lg border transition-colors cursor-pointer ";
 
               if (showCorrectness) {
                 if (answer.isCorrect) {
@@ -284,7 +284,15 @@ export function QuizPlayer({
               }
 
               return (
-                <div key={answer.id} className={className}>
+                <div
+                  key={answer.id}
+                  className={className}
+                  onClick={() => {
+                    if (!showFeedback && !isSubmitting) {
+                      setCurrentSelection(answer.id);
+                    }
+                  }}
+                >
                   <RadioGroupItem value={answer.id} id={answer.id} />
                   <Label htmlFor={answer.id} className="flex-1 cursor-pointer font-normal">
                     {answer.text}
@@ -312,7 +320,7 @@ export function QuizPlayer({
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-end gap-2">
             {!showFeedback ? (
               <Button onClick={handleConfirmAnswer} disabled={!currentSelection || isSubmitting}>
                 Confirm Answer
