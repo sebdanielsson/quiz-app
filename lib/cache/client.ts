@@ -6,7 +6,7 @@
  * - Implements cache-aside pattern via cachedFetch()
  * - Supports selective cache invalidation via invalidateCache()
  *
- * @see /docs/caching.md for full documentation
+ * @see docs/caching.md for full documentation
  */
 
 import { RedisClient } from "bun";
