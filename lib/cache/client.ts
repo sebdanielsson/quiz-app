@@ -90,10 +90,9 @@ export async function cachedFetch<T>(
     return data;
   }
 
-  // Store in cache (fire-and-forget)
+  // Store in cache (fire-and-forget) - SETEX is atomic SET + EXPIRE
   try {
-    await redis.set(key, JSON.stringify(data));
-    await redis.expire(key, ttlSeconds);
+    await redis.send("SETEX", [key, ttlSeconds.toString(), JSON.stringify(data)]);
   } catch {
     // Silently fail - caching is best-effort
   }
