@@ -158,4 +158,4 @@ This app supports both [Redis](https://redis.io) and [Valkey](https://valkey.io)
 2. `VALKEY_URL`
 3. Defaults to `redis://localhost:6379`
 
-The Docker Compose setup uses Valkey 8 Alpine for a lightweight, open-source option.
+The Docker Compose setup uses the official `valkey/valkey:9.0-trixie` image for a lightweight, open-source option based on Debian (trixie).
