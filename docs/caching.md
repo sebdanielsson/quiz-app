@@ -25,7 +25,7 @@ docker compose up -d
 Set the connection URL in your `.env.local`:
 
 ```env
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://:strongvalkeypassword@localhost:6379
 ```
 
 ### Production
