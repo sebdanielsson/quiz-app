@@ -85,13 +85,15 @@ export async function cachedFetch<T>(
   // Cache miss: fetch fresh data
   const data = await fetcher();
 
+  // Don't cache undefined/null results to avoid caching negative lookups
+  if (data === undefined || data === null) {
+    return data;
+  }
+
   // Store in cache (fire-and-forget)
   try {
-    const redis = await getRedis();
-    if (redis) {
-      await redis.set(key, JSON.stringify(data));
-      await redis.expire(key, ttlSeconds);
-    }
+    await redis.set(key, JSON.stringify(data));
+    await redis.expire(key, ttlSeconds);
   } catch {
     // Silently fail - caching is best-effort
   }
@@ -101,8 +103,7 @@ export async function cachedFetch<T>(
 
 /**
  * Invalidate cache keys matching a pattern.
- * Uses KEYS command which is fine for small key spaces.
- * For production at scale, consider SCAN or explicit key tracking.
+ * Uses SCAN command for production-safe, non-blocking iteration.
  *
  * @param pattern - Redis key pattern (e.g., "leaderboard:*")
  */
@@ -111,10 +112,20 @@ export async function invalidateCache(pattern: string): Promise<void> {
   if (!redis) return;
 
   try {
-    const keys = (await redis.send("KEYS", [pattern])) as string[];
-    if (keys && keys.length > 0) {
-      await redis.send("DEL", keys);
-    }
+    let cursor = "0";
+    do {
+      // SCAN returns [cursor, keys[]]
+      const result = (await redis.send("SCAN", [cursor, "MATCH", pattern, "COUNT", "100"])) as [
+        string,
+        string[],
+      ];
+      cursor = result[0];
+      const keys = result[1];
+
+      if (keys && keys.length > 0) {
+        await redis.send("DEL", keys);
+      }
+    } while (cursor !== "0");
   } catch {
     // Silently fail - cache invalidation is best-effort
   }
