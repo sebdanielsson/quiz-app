@@ -5,6 +5,7 @@ import type { Question, Answer } from "@/lib/db/schema";
 import { getApiContext, requirePermission, errorResponse, API_SCOPES } from "@/lib/auth/api";
 import { eq, and, count, desc, sql, asc } from "drizzle-orm";
 import { z } from "zod";
+import { invalidateCache, CACHE_KEYS } from "@/lib/cache";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -219,6 +220,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         })),
       );
     }
+
+    // Invalidate leaderboard caches (fire-and-forget, don't block response)
+    Promise.all([
+      invalidateCache(`${CACHE_KEYS.LEADERBOARD}:${quizId}:*`),
+      invalidateCache(`${CACHE_KEYS.GLOBAL_LEADERBOARD}:*`),
+    ]).catch((error) => {
+      console.warn("[cache] Failed to invalidate leaderboard caches:", error);
+    });
 
     return NextResponse.json(newAttempt, { status: 201 });
   } catch (error) {

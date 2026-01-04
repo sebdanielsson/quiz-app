@@ -21,6 +21,7 @@ A modern, full-stack quiz application built with Next.js 16, featuring OIDC auth
 - **Framework**: Next.js 16 (App Router, Turbopack)
 - **Runtime**: Bun
 - **Database**: PostgreSQL with Drizzle ORM (via bun:sql)
+- **Cache**: Valkey/Redis (optional, via Bun native client)
 - **Auth**: BetterAuth with OIDC + API Key plugins
 - **UI**: shadcn/ui (Base UI - Nova), Lucide Icons
 - **Validation**: Zod
@@ -110,6 +111,10 @@ bun run db:migrate
 # Or push schema directly (development)
 bun run db:push
 ```
+
+### Caching (Optional)
+
+The app includes an optional Redis/Valkey caching layer to reduce database load for high-traffic deployments. See [docs/caching.md](docs/caching.md) for full documentation. Caching is **opt-in** — if no Redis URL is configured, all queries hit the database directly.
 
 ### Development
 

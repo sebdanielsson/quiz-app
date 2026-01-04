@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { quiz, quizAttempt, user, question, answer } from "@/lib/db/schema";
 import type { Quiz, Question, Answer, User, QuizAttempt, AttemptAnswer } from "@/lib/db/schema";
 import { eq, desc, count, sql, and, or, lte, isNull, asc } from "drizzle-orm";
+import { cachedFetch, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
 
 export const ITEMS_PER_PAGE = 30;
 
@@ -37,6 +38,7 @@ export interface PaginatedResult<T> {
 /**
  * Get paginated quizzes ordered by creation date (newest first)
  * If isAdmin is false, only shows quizzes where publishedAt is null or in the past
+ * Results are cached in Redis for improved performance.
  */
 export async function getQuizzes(
   page: number = 1,
@@ -47,204 +49,224 @@ export async function getQuizzes(
     typeof quiz.$inferSelect & { questionCount: number; author: typeof user.$inferSelect | null }
   >
 > {
-  const offset = (page - 1) * limit;
+  const cacheKey = `${CACHE_KEYS.QUIZ_LIST}:${isAdmin ? "admin" : "public"}:${page}:${limit}`;
 
-  // Build where clause for non-admins: only show published quizzes
-  const publishedFilter = isAdmin
-    ? undefined
-    : or(isNull(quiz.publishedAt), lte(quiz.publishedAt, new Date()));
+  return cachedFetch(cacheKey, CACHE_TTL.QUIZ_LIST, async () => {
+    const offset = (page - 1) * limit;
 
-  // Get total count
-  const [{ total }] = await db.select({ total: count() }).from(quiz).where(publishedFilter);
+    // Build where clause for non-admins: only show published quizzes
+    const publishedFilter = isAdmin
+      ? undefined
+      : or(isNull(quiz.publishedAt), lte(quiz.publishedAt, new Date()));
 
-  // Get quizzes with question count and author
-  const quizzes = await db
-    .select({
-      quiz: quiz,
-      questionCount: sql<number>`(SELECT COUNT(*) FROM question WHERE question.quiz_id = ${quiz.id})`,
-      author: user,
-    })
-    .from(quiz)
-    .leftJoin(user, eq(quiz.authorId, user.id))
-    .where(publishedFilter)
-    .orderBy(desc(quiz.createdAt))
-    .limit(limit)
-    .offset(offset);
+    // Get total count
+    const [{ total }] = await db.select({ total: count() }).from(quiz).where(publishedFilter);
 
-  const items = quizzes.map((q) => ({
-    ...q.quiz,
-    questionCount: q.questionCount,
-    author: q.author,
-  }));
+    // Get quizzes with question count and author
+    const quizzes = await db
+      .select({
+        quiz: quiz,
+        questionCount: sql<number>`(SELECT COUNT(*) FROM question WHERE question.quiz_id = ${quiz.id})`,
+        author: user,
+      })
+      .from(quiz)
+      .leftJoin(user, eq(quiz.authorId, user.id))
+      .where(publishedFilter)
+      .orderBy(desc(quiz.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-  const totalPages = Math.ceil(total / limit);
+    const items = quizzes.map((q) => ({
+      ...q.quiz,
+      questionCount: q.questionCount,
+      author: q.author,
+    }));
 
-  return {
-    items,
-    totalCount: total,
-    totalPages,
-    currentPage: page,
-    hasMore: page < totalPages,
-  };
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items,
+      totalCount: total,
+      totalPages,
+      currentPage: page,
+      hasMore: page < totalPages,
+    };
+  });
 }
 
 /**
  * Get a single quiz by ID with all questions and answers
  * Note: Uses standard queries instead of nested relational queries
  * to work around a drizzle-orm bug with PostgreSQL (syntax error in lateral joins)
+ * Results are cached in Redis for improved performance.
  */
 export async function getQuizById(quizId: string): Promise<QuizWithRelations | undefined> {
-  // Fetch quiz with author
-  const quizData = await db.query.quiz.findFirst({
-    where: eq(quiz.id, quizId),
-    with: {
-      author: true,
-    },
+  const cacheKey = `${CACHE_KEYS.QUIZ_DETAIL}:${quizId}`;
+
+  return cachedFetch(cacheKey, CACHE_TTL.QUIZ_DETAIL, async () => {
+    // Fetch quiz with author
+    const quizData = await db.query.quiz.findFirst({
+      where: eq(quiz.id, quizId),
+      with: {
+        author: true,
+      },
+    });
+
+    if (!quizData) {
+      return undefined;
+    }
+
+    // Fetch questions separately
+    const questions = await db
+      .select()
+      .from(question)
+      .where(eq(question.quizId, quizId))
+      .orderBy(asc(question.order));
+
+    // Fetch all answers for these questions in one query
+    const questionIds = questions.map((q: Question) => q.id);
+    const answers =
+      questionIds.length > 0
+        ? await db
+            .select()
+            .from(answer)
+            .where(sql`${answer.questionId} IN ${questionIds}`)
+        : [];
+
+    // Group answers by question ID
+    const answersByQuestionId = answers.reduce(
+      (acc: Record<string, Answer[]>, a: Answer) => {
+        if (!acc[a.questionId]) {
+          acc[a.questionId] = [];
+        }
+        acc[a.questionId].push(a);
+        return acc;
+      },
+      {} as Record<string, Answer[]>,
+    );
+
+    // Combine questions with their answers
+    const questionsWithAnswers = questions.map((q: Question) => ({
+      ...q,
+      answers: answersByQuestionId[q.id] || [],
+    }));
+
+    return {
+      ...quizData,
+      questions: questionsWithAnswers,
+    } as QuizWithRelations;
   });
-
-  if (!quizData) {
-    return undefined;
-  }
-
-  // Fetch questions separately
-  const questions = await db
-    .select()
-    .from(question)
-    .where(eq(question.quizId, quizId))
-    .orderBy(asc(question.order));
-
-  // Fetch all answers for these questions in one query
-  const questionIds = questions.map((q: Question) => q.id);
-  const answers =
-    questionIds.length > 0
-      ? await db
-          .select()
-          .from(answer)
-          .where(sql`${answer.questionId} IN ${questionIds}`)
-      : [];
-
-  // Group answers by question ID
-  const answersByQuestionId = answers.reduce(
-    (acc: Record<string, Answer[]>, a: Answer) => {
-      if (!acc[a.questionId]) {
-        acc[a.questionId] = [];
-      }
-      acc[a.questionId].push(a);
-      return acc;
-    },
-    {} as Record<string, Answer[]>,
-  );
-
-  // Combine questions with their answers
-  const questionsWithAnswers = questions.map((q: Question) => ({
-    ...q,
-    answers: answersByQuestionId[q.id] || [],
-  }));
-
-  return {
-    ...quizData,
-    questions: questionsWithAnswers,
-  } as QuizWithRelations;
 }
 
 /**
  * Get quiz leaderboard (per-quiz)
+ * Results are cached in Redis for improved performance.
  */
 export async function getQuizLeaderboard(
   quizId: string,
   page: number = 1,
   limit: number = ITEMS_PER_PAGE,
 ) {
-  const offset = (page - 1) * limit;
+  const cacheKey = `${CACHE_KEYS.LEADERBOARD}:${quizId}:${page}:${limit}`;
 
-  // Get total count
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(quizAttempt)
-    .where(eq(quizAttempt.quizId, quizId));
+  return cachedFetch(cacheKey, CACHE_TTL.LEADERBOARD, async () => {
+    const offset = (page - 1) * limit;
 
-  // Get leaderboard entries
-  const entries = await db
-    .select({
-      attempt: quizAttempt,
-      user: user,
-    })
-    .from(quizAttempt)
-    .innerJoin(user, eq(quizAttempt.userId, user.id))
-    .where(eq(quizAttempt.quizId, quizId))
-    .orderBy(desc(quizAttempt.correctCount), quizAttempt.totalTimeMs)
-    .limit(limit)
-    .offset(offset);
+    // Get total count
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(quizAttempt)
+      .where(eq(quizAttempt.quizId, quizId));
 
-  const totalPages = Math.ceil(total / limit);
+    // Get leaderboard entries
+    const entries = await db
+      .select({
+        attempt: quizAttempt,
+        user: user,
+      })
+      .from(quizAttempt)
+      .innerJoin(user, eq(quizAttempt.userId, user.id))
+      .where(eq(quizAttempt.quizId, quizId))
+      .orderBy(desc(quizAttempt.correctCount), quizAttempt.totalTimeMs)
+      .limit(limit)
+      .offset(offset);
 
-  return {
-    items: entries.map((e: { attempt: QuizAttempt; user: User }, index: number) => ({
-      rank: offset + index + 1,
-      ...e.attempt,
-      user: e.user,
-    })),
-    totalCount: total,
-    totalPages,
-    currentPage: page,
-    hasMore: page < totalPages,
-  };
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: entries.map((e: { attempt: QuizAttempt; user: User }, index: number) => ({
+        rank: offset + index + 1,
+        ...e.attempt,
+        user: e.user,
+      })),
+      totalCount: total,
+      totalPages,
+      currentPage: page,
+      hasMore: page < totalPages,
+    };
+  });
 }
 
 /**
  * Get global leaderboard (sum of correct answers across all quizzes)
+ * This is the most expensive query - aggregates across all attempts.
+ * Results are cached in Redis for improved performance.
  */
 export async function getGlobalLeaderboard(page: number = 1, limit: number = ITEMS_PER_PAGE) {
-  const offset = (page - 1) * limit;
+  const cacheKey = `${CACHE_KEYS.GLOBAL_LEADERBOARD}:${page}:${limit}`;
 
-  // Get total unique users with attempts
-  const [{ total }] = await db
-    .select({ total: sql<number>`COUNT(DISTINCT ${quizAttempt.userId})` })
-    .from(quizAttempt);
+  return cachedFetch(cacheKey, CACHE_TTL.GLOBAL_LEADERBOARD, async () => {
+    const offset = (page - 1) * limit;
 
-  // Get aggregated leaderboard
-  const entries = await db
-    .select({
-      userId: quizAttempt.userId,
-      totalCorrect: sql<number>`SUM(${quizAttempt.correctCount})`,
-      totalTimeMs: sql<number>`SUM(${quizAttempt.totalTimeMs})`,
-      quizzesPlayed: sql<number>`COUNT(DISTINCT ${quizAttempt.quizId})`,
-      user: user,
-    })
-    .from(quizAttempt)
-    .innerJoin(user, eq(quizAttempt.userId, user.id))
-    .groupBy(quizAttempt.userId, user.id)
-    .orderBy(sql`SUM(${quizAttempt.correctCount}) DESC`, sql`SUM(${quizAttempt.totalTimeMs}) ASC`)
-    .limit(limit)
-    .offset(offset);
+    // Get total unique users with attempts
+    const [{ total }] = await db
+      .select({ total: sql<number>`COUNT(DISTINCT ${quizAttempt.userId})` })
+      .from(quizAttempt);
 
-  const totalPages = Math.ceil(total / limit);
+    // Get aggregated leaderboard
+    const entries = await db
+      .select({
+        userId: quizAttempt.userId,
+        totalCorrect: sql<number>`SUM(${quizAttempt.correctCount})`,
+        totalTimeMs: sql<number>`SUM(${quizAttempt.totalTimeMs})`,
+        quizzesPlayed: sql<number>`COUNT(DISTINCT ${quizAttempt.quizId})`,
+        user: user,
+      })
+      .from(quizAttempt)
+      .innerJoin(user, eq(quizAttempt.userId, user.id))
+      .groupBy(quizAttempt.userId, user.id)
+      .orderBy(sql`SUM(${quizAttempt.correctCount}) DESC`, sql`SUM(${quizAttempt.totalTimeMs}) ASC`)
+      .limit(limit)
+      .offset(offset);
 
-  return {
-    items: entries.map(
-      (
-        e: {
-          userId: string;
-          totalCorrect: number;
-          totalTimeMs: number;
-          quizzesPlayed: number;
-          user: User;
-        },
-        index: number,
-      ) => ({
-        rank: offset + index + 1,
-        userId: e.userId,
-        totalCorrect: e.totalCorrect,
-        totalTimeMs: e.totalTimeMs,
-        quizzesPlayed: e.quizzesPlayed,
-        user: e.user,
-      }),
-    ),
-    totalCount: total,
-    totalPages,
-    currentPage: page,
-    hasMore: page < totalPages,
-  };
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: entries.map(
+        (
+          e: {
+            userId: string;
+            totalCorrect: number;
+            totalTimeMs: number;
+            quizzesPlayed: number;
+            user: User;
+          },
+          index: number,
+        ) => ({
+          rank: offset + index + 1,
+          userId: e.userId,
+          totalCorrect: e.totalCorrect,
+          totalTimeMs: e.totalTimeMs,
+          quizzesPlayed: e.quizzesPlayed,
+          user: e.user,
+        }),
+      ),
+      totalCount: total,
+      totalPages,
+      currentPage: page,
+      hasMore: page < totalPages,
+    };
+  });
 }
 
 /**

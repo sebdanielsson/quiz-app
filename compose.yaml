@@ -2,6 +2,7 @@
 services:
   db:
     image: postgres:18-alpine
+    command: -c 'max_connections=500'
     volumes:
       - db:/var/lib/postgresql/data
     env_file:
@@ -11,7 +12,23 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       start_period: 1m
-    restart: always
+    restart: unless-stopped
+
+  cache:
+    image: valkey/valkey:9.0-trixie
+    env_file:
+      - .env.compose
+    volumes:
+      - cache:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
   db:
+  cache:
