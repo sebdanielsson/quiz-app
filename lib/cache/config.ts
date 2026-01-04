@@ -39,6 +39,13 @@ export const CACHE_TTL = {
    * Most expensive query - aggregates all attempts. Same TTL as quiz leaderboard.
    */
   GLOBAL_LEADERBOARD: 5 * 60,
+
+  /**
+   * Not-found cache TTL (30 seconds).
+   * Short TTL to prevent DB hammering on non-existent resources
+   * while allowing new resources to be found quickly.
+   */
+  NOT_FOUND: 30,
 } as const;
 
 /**

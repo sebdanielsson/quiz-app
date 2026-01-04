@@ -10,10 +10,27 @@
  */
 
 import { RedisClient } from "bun";
-import { isCachingEnabled, getRedisUrl } from "./config";
+import { isCachingEnabled, getRedisUrl, CACHE_TTL } from "./config";
+
+/** ISO 8601 date string pattern for JSON reviver */
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
+
+/**
+ * JSON reviver that restores Date objects from ISO strings.
+ * Used during cache deserialization to maintain type consistency.
+ */
+function dateReviver(_key: string, value: unknown): unknown {
+  if (typeof value === "string" && ISO_DATE_REGEX.test(value)) {
+    return new Date(value);
+  }
+  return value;
+}
 
 /** Singleton Redis client instance */
 let redisClient: RedisClient | null = null;
+
+/** Promise guard to prevent concurrent initialization */
+let initPromise: Promise<RedisClient | null> | null = null;
 
 /** Track if we've already logged a connection failure */
 let connectionWarningLogged = false;
@@ -21,6 +38,7 @@ let connectionWarningLogged = false;
 /**
  * Get or create the Redis client singleton.
  * Returns null if caching is disabled or connection fails.
+ * Uses promise-based guard to prevent race conditions during initialization.
  *
  * @returns RedisClient instance or null
  */
@@ -33,23 +51,34 @@ export async function getRedis(): Promise<RedisClient | null> {
     return redisClient;
   }
 
-  try {
-    const url = getRedisUrl();
-    redisClient = url ? new RedisClient(url) : new RedisClient();
-
-    // Test connection with a ping
-    await redisClient.send("PING", []);
-
-    // Only log once on first connection
-    return redisClient;
-  } catch (error) {
-    if (!connectionWarningLogged) {
-      console.warn("[cache] Redis connection failed, caching disabled:", error);
-      connectionWarningLogged = true;
-    }
-    redisClient = null;
-    return null;
+  // If initialization is in progress, wait for it
+  if (initPromise !== null) {
+    return initPromise;
   }
+
+  // Start initialization with promise guard
+  initPromise = (async () => {
+    try {
+      const url = getRedisUrl();
+      const client = url ? new RedisClient(url) : new RedisClient();
+
+      // Test connection with a ping
+      await client.send("PING", []);
+
+      redisClient = client;
+      return redisClient;
+    } catch (error) {
+      if (!connectionWarningLogged) {
+        console.warn("[cache] Redis connection failed, caching disabled:", error);
+        connectionWarningLogged = true;
+      }
+      return null;
+    } finally {
+      initPromise = null;
+    }
+  })();
+
+  return initPromise;
 }
 
 /**
@@ -76,7 +105,7 @@ export async function cachedFetch<T>(
     // Try to get from cache
     const cached = await redis.get(key);
     if (cached) {
-      return JSON.parse(cached) as T;
+      return JSON.parse(cached, dateReviver) as T;
     }
   } catch {
     // Silently continue to fetcher on cache read error
@@ -85,14 +114,14 @@ export async function cachedFetch<T>(
   // Cache miss: fetch fresh data
   const data = await fetcher();
 
-  // Don't cache undefined/null results to avoid caching negative lookups
-  if (data === undefined || data === null) {
-    return data;
-  }
-
   // Store in cache (fire-and-forget) - SETEX is atomic SET + EXPIRE
   try {
-    await redis.send("SETEX", [key, ttlSeconds.toString(), JSON.stringify(data)]);
+    if (data === undefined || data === null) {
+      // Cache not-found with short TTL to prevent DB hammering
+      await redis.send("SETEX", [key, CACHE_TTL.NOT_FOUND.toString(), JSON.stringify(null)]);
+    } else {
+      await redis.send("SETEX", [key, ttlSeconds.toString(), JSON.stringify(data)]);
+    }
   } catch {
     // Silently fail - caching is best-effort
   }
