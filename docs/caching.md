@@ -91,6 +91,7 @@ updated scores will be reflected once the relevant leaderboard cache entries exp
 request.
 
 Other cached data follows the standard cache-aside pattern and is refreshed on cache miss when the TTL has expired.
+
 ### Two-Layer Caching
 
 The app uses two caching layers:
