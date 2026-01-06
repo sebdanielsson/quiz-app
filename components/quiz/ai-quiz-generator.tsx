@@ -64,7 +64,9 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
 
   const handleGenerate = () => {
     if (!theme.trim()) {
-      toast.error("Please enter a theme for the quiz");
+      toast.error("Please enter a theme for the quiz", {
+        duration: Infinity,
+      });
       return;
     }
 
@@ -79,7 +81,9 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
       });
 
       if (!result.success) {
-        toast.error(result.error);
+        toast.error(result.error, {
+          duration: Infinity,
+        });
         return;
       }
 
@@ -101,11 +105,15 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
         };
 
         onGenerated(quizData);
-        toast.success("Quiz generated successfully!");
+        toast.success("Quiz generated successfully!", {
+          duration: Infinity,
+        });
 
         // Show remaining rate limit info
         if (result.rateLimit && result.rateLimit.remaining > 0) {
-          toast.info(`You have ${result.rateLimit.remaining} AI generation(s) remaining today.`);
+          toast.info(`You have ${result.rateLimit.remaining} AI generation(s) remaining today.`, {
+            duration: Infinity,
+          });
         }
 
         // Reset form and close dialog

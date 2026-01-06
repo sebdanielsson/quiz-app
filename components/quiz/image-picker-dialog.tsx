@@ -137,7 +137,9 @@ export function ImagePickerDialog({ open, onOpenChange, onSelect }: ImagePickerD
 
   const handleSearch = useCallback(() => {
     if (!query.trim()) {
-      toast.error("Please enter a search query");
+      toast.error("Please enter a search query", {
+        duration: Infinity,
+      });
       return;
     }
 
@@ -145,7 +147,9 @@ export function ImagePickerDialog({ open, onOpenChange, onSelect }: ImagePickerD
       const result = await searchImagesAction(query.trim());
 
       if (!result.success) {
-        toast.error(result.error ?? "Failed to search for images");
+        toast.error(result.error ?? "Failed to search for images", {
+          duration: Infinity,
+        });
         return;
       }
 
