@@ -132,7 +132,7 @@ Requirements:
 - You may use any characters required for ${languageName}, but avoid emojis, EM dashes, novelty symbols, and smart quotes; use plain text punctuation
 - Title should be catchy and descriptive (max 70 characters)
 - Description should summarize what the quiz covers (max 160 characters)
-- Do not include properties like "language" or "difficulty" in title or description
+- Do not include properties like "language" or "difficulty" in title or description, do not spoil answers there
 
 Difficulty Guidelines (${input.difficulty}):${difficultyGuidance}
 
