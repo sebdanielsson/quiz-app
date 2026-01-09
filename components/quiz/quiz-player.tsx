@@ -217,17 +217,21 @@ export function QuizPlayer({
         <div className="flex items-center gap-4">
           {hasTimeLimit && (
             <Badge
-              variant={timeRemainingMs! < 30000 ? "destructive" : "secondary"}
-              className="px-3 py-1 text-lg"
+              variant={
+                timeRemainingMs != null && timeRemainingMs < timeLimitSeconds * 1000 * 0.1
+                  ? "destructive"
+                  : "secondary"
+              }
+              className="px-3 py-4 text-lg"
             >
               <Clock className="h-4 w-4" />
-              {formatTime(timeRemainingMs!)}
+              <span className="min-w-[4ch] font-mono">{formatTime(timeRemainingMs!)}</span>
             </Badge>
           )}
           {!hasTimeLimit && (
-            <Badge variant="secondary" className="px-3 py-1 text-lg">
+            <Badge variant="secondary" className="px-3 py-4 text-lg">
               <Clock className="h-4 w-4" />
-              {formatTime(elapsedMs)}
+              <span className="min-w-[4ch] font-mono">{formatTime(elapsedMs)}</span>
             </Badge>
           )}
         </div>
