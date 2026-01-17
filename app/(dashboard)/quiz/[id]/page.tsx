@@ -11,6 +11,7 @@ import { siteConfig } from "@/lib/config";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SUPPORTED_LANGUAGES } from "@/lib/validations/quiz";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -112,7 +113,7 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
       {/* Hero Section */}
       <div className="relative">
         {quiz.heroImageUrl && (
-          <div className="relative mb-6 aspect-[3/1] w-full overflow-hidden rounded-xl">
+          <div className="relative mb-6 aspect-3/1 w-full overflow-hidden rounded-xl">
             <Image
               src={quiz.heroImageUrl}
               alt={quiz.title}
@@ -120,7 +121,7 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
               className="object-cover"
               priority
             />
-            <div className="from-background/80 absolute inset-0 bg-gradient-to-t to-transparent" />
+            <div className="from-background/80 absolute inset-0 bg-linear-to-t to-transparent" />
           </div>
         )}
 
@@ -144,6 +145,12 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
                 {quiz.maxAttempts} {quiz.maxAttempts === 1 ? "attempt" : "attempts"}
               </Badge>
               {quiz.randomizeQuestions && <Badge variant="outline">Randomized</Badge>}
+              <Badge variant="outline" className="first-letter:uppercase">
+                <span className="capitalize">{quiz.difficulty}</span>
+              </Badge>
+              <Badge variant="outline">
+                {SUPPORTED_LANGUAGES.find((l) => l.code === quiz.language)?.name ?? quiz.language}
+              </Badge>
               {quiz.publishedAt && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SUPPORTED_LANGUAGES } from "@/lib/validations/quiz";
 import type { Quiz, User as UserType } from "@/lib/db/schema";
 
 interface QuizCardProps {
@@ -21,6 +22,10 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ quiz }: QuizCardProps) {
+  const languageName =
+    SUPPORTED_LANGUAGES.find((l) => l.code === (quiz.language as string))?.name ??
+    (quiz.language as string);
+
   const formatTime = (seconds: number) => {
     if (seconds === 0) return "No limit";
     if (seconds < 60) return `${seconds}s`;
@@ -67,11 +72,15 @@ export function QuizCard({ quiz }: QuizCardProps) {
             {quiz.publishedAt.toLocaleDateString()}
           </div>
         )}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Badge variant="secondary">
             {quiz.maxAttempts === 1 ? "1 attempt" : `${quiz.maxAttempts} attempts`}
           </Badge>
           {quiz.randomizeQuestions && <Badge variant="outline">Randomized</Badge>}
+          <Badge variant="outline" className="capitalize">
+            {quiz.difficulty}
+          </Badge>
+          <Badge variant="outline">{languageName}</Badge>
         </div>
       </CardContent>
       <CardFooter>
