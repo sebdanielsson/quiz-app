@@ -53,6 +53,7 @@ export function QuizActionsMenu({ quizId, canEdit, canDelete }: QuizActionsMenuP
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
+          type="button"
           className={cn(buttonVariants({ variant: "outline", size: "icon-lg" }), "outline-none")}
           aria-label="More Options"
         >
