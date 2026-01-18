@@ -185,7 +185,7 @@ export function QuizPlayer({
       <div className="mx-auto max-w-2xl space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-center text-2xl">Quiz Complete!</CardTitle>
+            <CardTitle className="text-center text-xl sm:text-2xl">Quiz Complete!</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center">
