@@ -20,14 +20,10 @@ function SignInContent() {
         callbackURL: callbackUrl,
       });
     } catch (e: unknown) {
-      if (
-        e instanceof TypeError &&
-        typeof e.message === "string" &&
-        e.message.includes("Failed to fetch")
-      ) {
-        setError("Network error or CORS issue. Please try again later.");
+      if (e instanceof TypeError) {
+        setError("Network error or CORS issue. Check the console for more details.");
       } else {
-        setError("An unexpected error occurred.");
+        setError("An unexpected error occurred. Check the console for more details.");
       }
     }
   };
