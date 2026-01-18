@@ -140,5 +140,6 @@ Important:
 - Ensure factual accuracy
 - Questions should be clear and unambiguous
 - Answers should be distinct from each other
-- Avoid overly long questions or answers`;
+- Avoid overly long questions or answers
+- Do not include the sources in the output`;
 }
