@@ -53,6 +53,55 @@ export default async function AttemptResultPage({ params }: PageProps) {
     notFound();
   }
 
+  // Restrict access: must be logged in and have at least one attempt on this quiz
+  let isOwnAttempt = false;
+  let accessError: "not-logged-in" | "not-played" | null = null;
+  if (session?.user?.id) {
+    isOwnAttempt = session.user.id === attempt.userId;
+    if (!isOwnAttempt) {
+      const { getUserAttemptCount } = await import("@/lib/db/queries/quiz");
+      const attemptCount = await getUserAttemptCount(quizId, session.user.id);
+      if (!attemptCount || attemptCount === 0) {
+        accessError = "not-played";
+      }
+    }
+  } else {
+    accessError = "not-logged-in";
+  }
+
+  if (accessError) {
+    return (
+      <div className="mx-auto mt-16 max-w-md space-y-6 text-center">
+        <div className="text-3xl font-bold">Access Restricted</div>
+        {accessError === "not-logged-in" ? (
+          <>
+            <p className="text-muted-foreground text-lg">
+              You must be signed in to view quiz attempts.
+            </p>
+            <a
+              href="/sign-in"
+              className="bg-primary text-primary-foreground hover:bg-primary/80 mt-4 inline-flex h-10 items-center justify-center rounded-md px-4 text-base font-medium"
+            >
+              Sign In
+            </a>
+          </>
+        ) : (
+          <>
+            <p className="text-muted-foreground text-lg">
+              You need to play this quiz before you can view other players&apos; attempts.
+            </p>
+            <a
+              href={`/quiz/${quizId}`}
+              className="bg-primary text-primary-foreground hover:bg-primary/80 mt-4 inline-flex h-10 items-center justify-center rounded-md px-4 text-base font-medium"
+            >
+              Play Quiz
+            </a>
+          </>
+        )}
+      </div>
+    );
+  }
+
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -61,7 +110,7 @@ export default async function AttemptResultPage({ params }: PageProps) {
   };
 
   const percentage = Math.round((attempt.correctCount / attempt.totalQuestions) * 100);
-  const isOwnAttempt = session?.user?.id === attempt.userId;
+  // isOwnAttempt is already set above
 
   const getScoreMessage = (pct: number) => {
     if (pct === 100) return "Perfect score! 🎉";
