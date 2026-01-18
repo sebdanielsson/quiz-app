@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { headers } from "next/headers";
 import { CheckCircle, XCircle, Clock, ArrowLeft, Trophy } from "lucide-react";
 import { auth } from "@/lib/auth/server";
@@ -147,6 +148,17 @@ export default async function AttemptResultPage({ params }: PageProps) {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
+                {question.imageUrl && (
+                  <div className="relative mb-3 aspect-video w-full overflow-hidden rounded-md">
+                    <Image
+                      src={question.imageUrl}
+                      alt={`Question ${index + 1} image`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </div>
+                )}
                 <div className="space-y-1">
                   <p className="text-muted-foreground text-sm">
                     {isOwnAttempt ? "Your answer:" : `${userName}'s answer:`}

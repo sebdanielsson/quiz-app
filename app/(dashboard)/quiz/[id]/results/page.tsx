@@ -101,7 +101,10 @@ export default async function QuizResultsPage({ params, searchParams }: PageProp
             </div>
           ) : (
             <>
-              <QuizLeaderboard entries={leaderboard.items} currentUserId={session?.user?.id} />
+              <QuizLeaderboard
+                entries={leaderboard.items.map((item) => ({ ...item, quizId }))}
+                currentUserId={session?.user?.id}
+              />
               <div className="mt-4">
                 <PaginationControls
                   currentPage={leaderboard.currentPage}

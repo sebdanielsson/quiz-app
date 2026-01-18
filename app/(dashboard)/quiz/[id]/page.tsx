@@ -203,7 +203,10 @@ export default async function QuizDetailPage({ params, searchParams }: PageProps
           <CardDescription>Top scores for this quiz</CardDescription>
         </CardHeader>
         <CardContent>
-          <QuizLeaderboard entries={leaderboard.items} currentUserId={session?.user?.id} />
+          <QuizLeaderboard
+            entries={leaderboard.items.map((item) => ({ ...item, quizId: id }))}
+            currentUserId={session?.user?.id}
+          />
           <div className="mt-4">
             <PaginationControls
               currentPage={leaderboard.currentPage}

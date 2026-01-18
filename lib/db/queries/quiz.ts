@@ -196,6 +196,7 @@ export async function getQuizLeaderboard(
     return {
       items: entries.map((e: { attempt: QuizAttempt; user: User }, index: number) => ({
         rank: offset + index + 1,
+        attemptId: e.attempt.id,
         ...e.attempt,
         user: e.user,
       })),

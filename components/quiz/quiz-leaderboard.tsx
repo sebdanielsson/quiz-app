@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Trophy, Medal, Clock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -18,6 +21,8 @@ interface LeaderboardEntry {
   totalQuestions: number;
   totalTimeMs: number;
   timedOut?: boolean;
+  attemptId?: string;
+  quizId?: string;
 }
 
 interface QuizLeaderboardProps {
@@ -26,6 +31,8 @@ interface QuizLeaderboardProps {
 }
 
 export function QuizLeaderboard({ entries, currentUserId }: QuizLeaderboardProps) {
+  const router = useRouter();
+
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -80,10 +87,17 @@ export function QuizLeaderboard({ entries, currentUserId }: QuizLeaderboardProps
       <TableBody>
         {entries.map((entry) => {
           const isCurrentUser = entry.user.id === currentUserId;
+          const isClickable = entry.attemptId && entry.quizId;
+
           return (
             <TableRow
               key={`${entry.user.id}-${entry.rank}`}
-              className={isCurrentUser ? "bg-primary/5" : ""}
+              className={`${isClickable ? "hover:bg-muted/50 cursor-pointer" : ""} ${isCurrentUser ? "bg-primary/5" : ""}`}
+              onClick={
+                isClickable
+                  ? () => router.push(`/quiz/${entry.quizId}/results/${entry.attemptId}`)
+                  : undefined
+              }
             >
               <TableCell>{getRankIcon(entry.rank)}</TableCell>
               <TableCell>
