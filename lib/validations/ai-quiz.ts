@@ -35,7 +35,10 @@ export const aiQuizInputSchema = z
         z
           .string()
           .regex(/^[A-Za-z0-9+/]+=*$/, "Invalid base64 format")
-          .max(7 * 1024 * 1024, "Image is too large (max ~5MB base64)"),
+          .max(
+            Math.ceil(5 * 1024 * 1024 * (4 / 3)),
+            "Image is too large (max ~6.67MB base64 ≈ 5MB raw)",
+          ),
       )
       .max(4)
       .optional(),
@@ -47,11 +50,10 @@ export const aiQuizInputSchema = z
   })
   .refine(
     (data) => {
-      // If images are provided, imageMimeTypes must be provided and match length
-      if (data.images && data.images.length > 0) {
-        return data.imageMimeTypes && data.imageMimeTypes.length === data.images.length;
-      }
-      return true;
+      // Both arrays must be provided together and have matching lengths
+      const imagesLength = data.images?.length ?? 0;
+      const mimeTypesLength = data.imageMimeTypes?.length ?? 0;
+      return imagesLength === mimeTypesLength;
     },
     {
       message: "Number of images and MIME types must match",

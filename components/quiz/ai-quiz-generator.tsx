@@ -143,9 +143,17 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
           continue;
         }
 
-        // Warn if MIME type is missing but extension is valid
+        // Infer MIME type from extension if missing or invalid
+        let mimeType = file.type;
         if (!isValidMimeType && isValidExtension) {
-          console.warn(`File ${file.name} has no MIME type, validated by extension`);
+          const extToMime: Record<string, string> = {
+            png: "image/png",
+            jpg: "image/jpeg",
+            jpeg: "image/jpeg",
+            webp: "image/webp",
+          };
+          mimeType = extToMime[fileExtension!] || "";
+          console.warn(`File ${file.name} has no MIME type, inferred ${mimeType} from extension`);
         }
 
         // Check file size
@@ -154,19 +162,13 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
           continue;
         }
 
-        // Check max images
-        if (images.length + newImages.length >= MAX_IMAGES) {
-          errors.push(`Maximum ${MAX_IMAGES} images allowed`);
-          break;
-        }
-
         try {
           const base64 = await fileToBase64(file);
           newImages.push({
             id: crypto.randomUUID(),
             base64,
             file,
-            mimeType: file.type,
+            mimeType,
           });
         } catch (error) {
           console.error("Failed to process image in AI Quiz Generator", {
@@ -178,13 +180,22 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
       }
 
       if (errors.length > 0) {
-        errors.forEach((error) => {
-          toast.error(error, { duration: 5000 });
-        });
+        if (errors.length === 1) {
+          toast.error(errors[0], { duration: 5000 });
+        } else {
+          toast.error("Some images couldn't be added", {
+            description: errors.join("\n"),
+            duration: 10000,
+          });
+        }
       }
 
       if (newImages.length > 0) {
-        setImages((prev) => [...prev, ...newImages]);
+        setImages((prev) => {
+          // Final check against current state to prevent race conditions
+          const finalImages = newImages.filter((_, index) => prev.length + index < MAX_IMAGES);
+          return [...prev, ...finalImages];
+        });
       }
 
       // Reset file input
@@ -192,7 +203,7 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
         fileInputRef.current.value = "";
       }
     },
-    [images.length, fileToBase64],
+    [fileToBase64],
   );
 
   const removeImage = useCallback((id: string) => {
@@ -334,7 +345,7 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
           <div className="grid gap-2">
             <Label htmlFor="ai-image-upload">Reference Images (Optional)</Label>
             <div className="flex flex-wrap gap-2">
-              {images.map((image) => (
+              {images.map((image, index) => (
                 <div
                   key={image.id}
                   className="group relative h-16 w-16 overflow-hidden rounded-md border"
@@ -342,7 +353,7 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`data:${image.mimeType};base64,${image.base64}`}
-                    alt="Preview"
+                    alt={`Preview of uploaded reference image ${index + 1}`}
                     className="h-full w-full object-cover"
                   />
                   <button
