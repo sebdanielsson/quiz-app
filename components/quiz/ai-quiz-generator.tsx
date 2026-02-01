@@ -159,7 +159,11 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
             file,
             mimeType: file.type,
           });
-        } catch {
+        } catch (error) {
+          console.error("Failed to process image in AI Quiz Generator", {
+            fileName: file.name,
+            error,
+          });
           errors.push(`${file.name}: Failed to process image`);
         }
       }
