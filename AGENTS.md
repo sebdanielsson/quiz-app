@@ -212,4 +212,3 @@ export const db = drizzle({ client, schema });
 ## Extra Notes
 
 - As a last step before completing a task, always run formatting, linting and type checking commands to ensure code quality.
-

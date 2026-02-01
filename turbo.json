@@ -6,6 +6,10 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
+    "build:only": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
@@ -14,8 +18,6 @@
       "dependsOn": ["^build"]
     },
     "tsc": {},
-    "format": {},
-    "format:check": {},
     "stylelint": {},
     "test": {},
     "db:migrate": {},
