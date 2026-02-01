@@ -64,6 +64,7 @@ interface ImageData {
   id: string;
   base64: string;
   file: File;
+  mimeType: string;
 }
 
 // ============================================================================
@@ -97,12 +98,27 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const result = reader.result as string;
+        const result = reader.result;
+        if (typeof result !== "string") {
+          reject(new Error("Failed to read file as data URL"));
+          return;
+        }
         // Extract base64 data without the data URL prefix
-        const base64 = result.split(",")[1];
+        const parts = result.split(",");
+        const base64 = parts.length > 1 ? parts[1] : "";
+        if (!base64) {
+          reject(new Error("Invalid file data: missing base64 payload"));
+          return;
+        }
         resolve(base64);
       };
-      reader.onerror = reject;
+      reader.onerror = (error) => {
+        console.error("Failed to process image in AI Quiz Generator", {
+          fileName: file.name,
+          error,
+        });
+        reject(error);
+      };
       reader.readAsDataURL(file);
     });
   }, []);
@@ -138,9 +154,10 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
         try {
           const base64 = await fileToBase64(file);
           newImages.push({
-            id: Math.random().toString(36).substring(7),
+            id: crypto.randomUUID(),
             base64,
             file,
+            mimeType: file.type,
           });
         } catch {
           errors.push(`${file.name}: Failed to process image`);
@@ -148,7 +165,9 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
       }
 
       if (errors.length > 0) {
-        toast.error(errors.join("\n"), { duration: 5000 });
+        errors.forEach((error) => {
+          toast.error(error, { duration: 5000 });
+        });
       }
 
       if (newImages.length > 0) {
@@ -191,6 +210,7 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
         language,
         useWebSearch: webSearchEnabled && useWebSearch,
         images: images.length > 0 ? images.map((img) => img.base64) : undefined,
+        imageMimeTypes: images.length > 0 ? images.map((img) => img.mimeType) : undefined,
       });
 
       if (!result.success) {
@@ -280,16 +300,25 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
               rows={4}
               className="resize-none"
             />
-            <div className="flex justify-end">
-              <span className={`text-xs ${getCharacterCountColor()}`}>
-                {theme.length} / {MAX_PROMPT_LENGTH}
+            <div className="flex justify-end" aria-live="polite">
+              <span className={`text-xs ${getCharacterCountColor()} flex items-center gap-1`}>
+                <span>
+                  {theme.length} / {MAX_PROMPT_LENGTH}
+                </span>
+                {theme.length > MAX_PROMPT_LENGTH ? (
+                  <span className="font-medium" aria-label="Character limit exceeded">
+                    – Over limit
+                  </span>
+                ) : theme.length >= MAX_PROMPT_LENGTH * 0.9 ? (
+                  <span aria-label="Approaching character limit">– Near limit</span>
+                ) : null}
               </span>
             </div>
           </div>
 
           {/* Image Upload */}
           <div className="grid gap-2">
-            <Label>Reference Images (Optional)</Label>
+            <Label htmlFor="ai-image-upload">Reference Images (Optional)</Label>
             <div className="flex flex-wrap gap-2">
               {images.map((image) => (
                 <div
@@ -298,7 +327,7 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`data:${image.file.type};base64,${image.base64}`}
+                    src={`data:${image.mimeType};base64,${image.base64}`}
                     alt="Preview"
                     className="h-full w-full object-cover"
                   />
@@ -307,6 +336,7 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
                     onClick={() => removeImage(image.id)}
                     disabled={isPending}
                     className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0"
+                    aria-label="Remove image"
                   >
                     <X className="h-4 w-4 text-white" />
                   </button>
@@ -320,6 +350,7 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
                   className="h-16 w-16"
                   disabled={isPending}
                   onClick={() => fileInputRef.current?.click()}
+                  aria-label="Upload images"
                 >
                   <ImagePlus className="h-5 w-5" />
                 </Button>
@@ -327,6 +358,7 @@ export function AIQuizGenerator({ onGenerated, webSearchEnabled = false }: AIQui
             </div>
             <input
               ref={fileInputRef}
+              id="ai-image-upload"
               type="file"
               accept={ALLOWED_IMAGE_EXTENSIONS}
               multiple

@@ -50,7 +50,7 @@ export interface GenerateQuizResult {
 /**
  * Build messages for the AI, supporting multi-modal inputs with images.
  */
-function buildMessages(input: AIQuizInput, prompt: string) {
+function buildMessages(input: AIQuizInput, prompt: string, imageMimeTypes?: string[]) {
   const hasImages = input.images && input.images.length > 0;
 
   if (!hasImages) {
@@ -59,17 +59,11 @@ function buildMessages(input: AIQuizInput, prompt: string) {
   }
 
   // Multi-modal prompt with images
-  // Images are base64 strings, we assume PNG if not specified
   const content = [
     { type: "text" as const, text: prompt },
-    ...(input.images?.map((base64) => {
-      // Try to detect image type from base64 prefix, default to PNG
-      let mimeType = "image/png";
-      if (base64.startsWith("/9j/")) {
-        mimeType = "image/jpeg";
-      } else if (base64.startsWith("UklGR")) {
-        mimeType = "image/webp";
-      }
+    ...(input.images?.map((base64, index) => {
+      // Use provided MIME type or default to PNG
+      const mimeType = imageMimeTypes?.[index] ?? "image/png";
 
       return {
         type: "image" as const,
@@ -153,7 +147,8 @@ export async function generateQuizWithAI(input: AIQuizInput): Promise<GenerateQu
 
     // 6. Generate quiz with AI
     const useWebSearch = validatedInput.data.useWebSearch && isWebSearchAvailable();
-    const hasImages = validatedInput.data.images && validatedInput.data.images.length > 0;
+    const imageCount = validatedInput.data.images?.length ?? 0;
+    const hasImages = imageCount > 0;
     const prompt = generateQuizPrompt(validatedInput.data, useWebSearch);
     const model = getModelWithTracking(aiConfig.provider, aiConfig.model, session.user.id);
 
@@ -170,14 +165,14 @@ export async function generateQuizWithAI(input: AIQuizInput): Promise<GenerateQu
         questionCount: String(validatedInput.data.questionCount),
         webSearchEnabled: String(useWebSearch),
         hasImages: String(hasImages),
-        imageCount: String(validatedInput.data.images?.length ?? 0),
+        imageCount: String(imageCount),
       },
     };
 
     let quizOutput: AIQuizOutput;
 
     // Build messages (supports multi-modal with images)
-    const messages = buildMessages(validatedInput.data, prompt);
+    const messages = buildMessages(validatedInput.data, prompt, validatedInput.data.imageMimeTypes);
 
     if (useWebSearch) {
       // Use generateText with Output.object() for web search support
@@ -266,8 +261,14 @@ export async function generateQuizWithAI(input: AIQuizInput): Promise<GenerateQu
           errorCode: "RATE_LIMITED",
         };
       }
-      // Handle vision/image errors
-      if (error.message.includes("image") || error.message.includes("vision")) {
+      // Handle vision/image errors with more specific detection
+      if (
+        hasImages &&
+        (error.message.toLowerCase().includes("does not support image") ||
+          error.message.toLowerCase().includes("vision") ||
+          error.message.toLowerCase().includes("multimodal") ||
+          error.message.includes("image_url"))
+      ) {
         return {
           success: false,
           error: "The AI model doesn't support image analysis. Please try without images.",

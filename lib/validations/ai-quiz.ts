@@ -29,7 +29,20 @@ export const aiQuizInputSchema = z.object({
   /** Whether to use web search for up-to-date information */
   useWebSearch: z.boolean().default(true),
   /** Optional base64-encoded images to include with the prompt (PNG, JPEG, WEBP) */
-  images: z.array(z.string()).max(4).optional(),
+  images: z
+    .array(
+      z
+        .string()
+        .regex(/^[A-Za-z0-9+/]+=*$/, "Invalid base64 format")
+        .max(7 * 1024 * 1024, "Image is too large (max ~5MB base64)"),
+    )
+    .max(4)
+    .optional(),
+  /** MIME types corresponding to images array */
+  imageMimeTypes: z
+    .array(z.enum(["image/png", "image/jpeg", "image/webp"]))
+    .max(4)
+    .optional(),
 });
 
 export type AIQuizInput = z.infer<typeof aiQuizInputSchema>;
@@ -98,8 +111,9 @@ export function generateQuizPrompt(input: AIQuizInput, useWebSearch: boolean = f
     : `\n\nNote: Today's date is ${currentDate}. Base your questions on your training knowledge.`;
 
   const hasImages = input.images && input.images.length > 0;
+  const imageCount = input.images?.length ?? 0;
   const imageContext = hasImages
-    ? `\n\nImage Analysis:\n- ${input.images!.length} image(s) have been provided for reference\n- Analyze the image(s) carefully and incorporate relevant details into the quiz\n- Questions can reference visual elements, text, or concepts shown in the images`
+    ? `\n\nImage Analysis:\n- ${imageCount} image(s) have been provided for reference\n- Analyze the image(s) carefully and incorporate relevant details into the quiz\n- Questions can reference visual elements, text, or concepts shown in the images`
     : "";
 
   return `Generate a ${input.difficulty} difficulty quiz about: "${input.theme}"${webSearchContext}${imageContext}
