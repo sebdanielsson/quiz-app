@@ -13,6 +13,9 @@ out/
 # build output
 build/
 
+# generated content
+.source
+
 # misc
 .DS_Store
 *.pem
