@@ -1,0 +1,12 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "outputs": [".next/**", "!.next/cache/**"],
+      "passThroughEnv": ["NODE_ENV", "NEXT_PUBLIC_APP_URL", "VERCEL_PROJECT_PRODUCTION_URL"]
+    },
+    "dev": {
+      "passThroughEnv": ["NODE_ENV", "NEXT_PUBLIC_APP_URL", "VERCEL_PROJECT_PRODUCTION_URL"]
+    }
+  }
+}
