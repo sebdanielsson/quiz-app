@@ -7,7 +7,7 @@ A modern, full-stack quiz application built with Next.js 16, featuring OIDC auth
 This is a **Bun workspaces + Turborepo monorepo** with:
 
 - **apps/web** — Main Next.js application
-- **apps/docs** — Documentation app (to be created)
+- **apps/docs** — Documentation site
 
 All commands should be run from the repository root using Turborepo.
 
