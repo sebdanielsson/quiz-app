@@ -43,7 +43,42 @@ Quick links:
 
 ## Quick Start
 
-### Prerequisites
+### Create a New App (Recommended)
+
+The fastest way to get started is using `create-respondeo-app`:
+
+```bash
+# Using Bun (recommended)
+bun create respondeo-app my-quiz-app
+
+# Or with npm
+npx create-respondeo-app my-quiz-app
+
+# Or with pnpm
+pnpm create respondeo-app my-quiz-app
+```
+
+This will:
+
+- Download the latest template
+- Install dependencies
+- Set up environment files
+- Show you the next steps
+
+Then:
+
+```bash
+cd my-quiz-app
+# Configure .env.local with your database and OIDC settings
+bun run db:migrate    # Run database migrations
+bun run dev           # Start development server
+```
+
+### Manual Setup
+
+If you prefer to clone the repository directly:
+
+#### Prerequisites
 
 - [Bun](https://bun.sh/) >= 1.3.8
 - PostgreSQL database
