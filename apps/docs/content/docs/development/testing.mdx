@@ -1,0 +1,174 @@
+---
+title: Testing
+description: Testing strategy and load test results
+---
+
+## Test Strategy
+
+The Quiz App uses a combination of unit tests, integration tests, and load tests to ensure reliability and performance.
+
+### Unit Tests
+
+Unit tests cover individual functions and components:
+
+- **Validation schemas** — Zod schema edge cases
+- **Permission helpers** — RBAC functions
+- **Utility functions** — Data transformations
+
+Run unit tests:
+
+```bash
+bun test
+```
+
+### Integration Tests
+
+Integration tests verify end-to-end functionality:
+
+- **Server actions** — Quiz creation, attempt submission
+- **API routes** — All endpoints with authentication
+- **Database operations** — CRUD operations
+
+### Load Tests
+
+Load tests simulate high-traffic scenarios using [k6](https://k6.io/).
+
+## Load Test Results
+
+The app has been tested to sustain **5000 concurrent users** with 0% error rate.
+
+### Latest Results (January 4, 2026)
+
+| Metric               | Value                                              |
+| -------------------- | -------------------------------------------------- |
+| **Peak VUs**         | 5000 (3000 browsers, 1500 players, 500 spectators) |
+| **Error Rate**       | 0.00% ✅                                           |
+| **Throughput**       | 834 req/s                                          |
+| **Total Requests**   | 319,511                                            |
+| **Test Duration**    | 6m 23s                                             |
+| **Data Transferred** | 1.7 GB received, 109 MB sent                       |
+
+### Performance Optimizations
+
+The following optimizations enabled this performance level:
+
+1. **Redis/Valkey caching** — 5-10 minute TTL on read-heavy data
+2. **PostgreSQL tuning** — Increased connections and memory
+3. **Cached quiz data for attempts** — Eliminates 3 DB queries per attempt
+
+### Endpoint Latency
+
+| Endpoint           | Median  | p90   | p95   | p99   |
+| ------------------ | ------- | ----- | ----- | ----- |
+| Quiz List          | 9.31ms  | 295ms | 1.04s | 2.32s |
+| Quiz Detail        | 9.65ms  | 311ms | 1.07s | 2.31s |
+| Attempt Submit     | 20.19ms | 532ms | 1.32s | 2.67s |
+| Global Leaderboard | 8.86ms  | 330ms | 1.05s | 2.34s |
+| Quiz Leaderboard   | 9.08ms  | 374ms | 1.14s | 2.40s |
+
+**Notes:**
+
+- Median latencies are excellent (~10ms) thanks to caching
+- p95+ latencies are elevated under peak load but acceptable
+- Write path (attempt submission) has highest latency as expected
+
+### Comparison: Before vs After Caching
+
+| Metric         | Without Cache | With Cache | Improvement |
+| -------------- | ------------- | ---------- | ----------- |
+| Max Stable VUs | ~1,600        | 5,000      | **3.1x**    |
+| Error Rate     | 0.01%         | 0.00%      | ✅          |
+| Throughput     | ~400 req/s    | 834 req/s  | **2x**      |
+| Median Latency | ~15ms         | ~10ms      | 33% faster  |
+
+## Running Load Tests
+
+### Prerequisites
+
+Install k6:
+
+```bash
+# macOS
+brew install k6
+
+# Linux
+sudo gpg -k
+sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+sudo apt-get update
+sudo apt-get install k6
+
+# Windows
+choco install k6
+```
+
+### Run Load Test
+
+```bash
+# Start the app
+docker compose up -d
+bun run dev
+
+# In another terminal
+bun run loadtest
+```
+
+The load test script is located at `apps/web/tests/loadtest.js`.
+
+### Test Scenarios
+
+The load test simulates three user types:
+
+1. **Browsers (60%)** — View quiz list and details
+2. **Players (30%)** — Play quizzes and submit attempts
+3. **Spectators (10%)** — View leaderboards
+
+### Customizing Load Tests
+
+Edit `apps/web/tests/loadtest.js`:
+
+```javascript
+export const options = {
+  stages: [
+    { duration: "30s", target: 100 }, // Ramp up to 100 users
+    { duration: "1m", target: 100 }, // Stay at 100 users
+    { duration: "30s", target: 0 }, // Ramp down to 0
+  ],
+  thresholds: {
+    http_req_failed: ["rate<0.01"], // <1% errors
+    http_req_duration: ["p(95)<1000"], // 95% requests <1s
+  },
+};
+```
+
+## Performance Monitoring
+
+### Database
+
+Monitor PostgreSQL performance:
+
+```bash
+docker compose exec db psql -U quiz_app -c "SELECT * FROM pg_stat_activity;"
+```
+
+### Cache
+
+Monitor Redis/Valkey:
+
+```bash
+docker compose exec valkey redis-cli INFO stats
+docker compose exec valkey redis-cli INFO memory
+```
+
+### Application
+
+Next.js performance monitoring is available through:
+
+- **Vercel Analytics** (if deployed on Vercel)
+- **Custom logging** in server actions and API routes
+
+## Next Steps
+
+- [Architecture](/development/architecture) — System architecture
+- [Caching Guide](/features/caching) — Caching configuration
+- [Database Guide](/guides/database) — Database optimization

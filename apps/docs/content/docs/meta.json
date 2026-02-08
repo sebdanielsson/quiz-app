@@ -1,0 +1,19 @@
+{
+  "title": "Quiz App Documentation",
+  "pages": [
+    "index",
+    "---Getting Started---",
+    "getting-started",
+    "---Guides---",
+    "guides",
+    "---Features---",
+    "features",
+    "---API Reference---",
+    "api-reference",
+    "---Development---",
+    "development",
+    "---",
+    "troubleshooting",
+    "faq"
+  ]
+}

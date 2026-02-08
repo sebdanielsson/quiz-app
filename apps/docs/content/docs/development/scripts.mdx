@@ -1,0 +1,236 @@
+---
+title: Scripts
+description: Available npm/bun scripts
+---
+
+All scripts should be run from the repository root using Bun and Turborepo.
+
+## Development
+
+### Start Development Server
+
+```bash
+bun run dev
+```
+
+Starts the Next.js development server with Turbopack for fast hot-reloading.
+
+- Web app: http://localhost:3000
+- Docs: http://localhost:3001
+
+### Filter by App
+
+```bash
+bun run dev --filter=web    # Only web app
+bun run dev --filter=docs   # Only docs
+```
+
+## Building
+
+### Build All Apps
+
+```bash
+bun run build
+```
+
+Runs:
+
+1. Database migrations (`db:migrate`)
+2. Next.js production build
+
+### Build Specific App
+
+```bash
+bun run build --filter=web
+bun run build --filter=docs
+```
+
+### Build Without Migrations
+
+```bash
+bun run build:only
+```
+
+Skips database migrations (useful for CI or when migrations already ran).
+
+## Production
+
+### Start Production Server
+
+```bash
+bun run start
+```
+
+Starts the production server for all apps.
+
+## Database
+
+### Run Migrations
+
+```bash
+bun run db:migrate
+```
+
+Applies pending database migrations. Safe to run multiple times.
+
+### Push Schema (Development)
+
+```bash
+bun run db:push
+```
+
+Pushes schema changes directly to the database without creating migration files. **Development only** — use migrations for production.
+
+### Generate Migration
+
+```bash
+bun run db:generate
+```
+
+Generates a new migration file from schema changes.
+
+### Open Database Studio
+
+```bash
+bun run db:studio
+```
+
+Opens Drizzle Studio for visual database browsing and editing at http://localhost:4983
+
+## Code Quality
+
+### Type Checking
+
+```bash
+bun run tsc
+```
+
+Runs TypeScript type checker across all apps.
+
+### Linting
+
+```bash
+bun run lint
+```
+
+Runs ESLint on all apps. Auto-fixes where possible.
+
+### Formatting
+
+```bash
+bun run format        # Format all files
+bun run format:check  # Check without formatting
+```
+
+Formats code with oxfmt (Rust-based formatter).
+
+### CSS Linting
+
+```bash
+bun run stylelint
+```
+
+Runs Stylelint on CSS files.
+
+## Testing
+
+### Run All Tests
+
+```bash
+bun test
+```
+
+Runs the test suite.
+
+### Load Testing
+
+```bash
+# Start the app first
+docker compose up -d
+bun run dev
+
+# In another terminal
+bun run loadtest
+```
+
+Runs k6 load tests against the local development server.
+
+## Docker
+
+### Start Services
+
+```bash
+docker compose up -d
+```
+
+Starts PostgreSQL and Valkey containers.
+
+### View Logs
+
+```bash
+docker compose logs -f
+docker compose logs -f db      # PostgreSQL only
+docker compose logs -f valkey  # Valkey only
+```
+
+### Stop Services
+
+```bash
+docker compose down
+```
+
+### Reset Database
+
+```bash
+docker compose down -v  # Removes volumes
+docker compose up -d
+bun run db:migrate
+```
+
+## Turborepo
+
+Turborepo caches task outputs for faster subsequent runs.
+
+### Clear Cache
+
+```bash
+bunx turbo run build --force
+```
+
+Forces a rebuild, ignoring cache.
+
+### View Task Graph
+
+```bash
+bunx turbo run build --graph
+```
+
+Visualizes task dependencies.
+
+## Script Summary
+
+| Command                | Description                            |
+| ---------------------- | -------------------------------------- |
+| `bun run dev`          | Start development server (Turbopack)   |
+| `bun run build`        | Build for production (with migrations) |
+| `bun run build:only`   | Build without running migrations       |
+| `bun run start`        | Start production server                |
+| `bun run tsc`          | TypeScript type checking               |
+| `bun run lint`         | Run ESLint                             |
+| `bun run format`       | Format code with oxfmt                 |
+| `bun run format:check` | Check formatting without changes       |
+| `bun run stylelint`    | Run Stylelint for CSS                  |
+| `bun test`             | Run tests                              |
+| `bun run db:migrate`   | Run database migrations                |
+| `bun run db:push`      | Push schema to database (dev only)     |
+| `bun run db:generate`  | Generate migration files               |
+| `bun run db:studio`    | Open Drizzle Studio                    |
+| `bun run loadtest`     | Run k6 load tests                      |
+| `docker compose up -d` | Start PostgreSQL and Valkey            |
+| `docker compose down`  | Stop Docker services                   |
+
+## Next Steps
+
+- [Architecture](/development/architecture) — Understand the codebase
+- [Testing](/development/testing) — Test strategy and guides
+- [Database Guide](/guides/database) — Database operations

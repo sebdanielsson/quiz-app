@@ -1,0 +1,88 @@
+---
+title: Introduction
+description: Welcome to the Quiz App documentation
+---
+
+# Quiz App
+
+A modern, full-stack quiz application built with Next.js 16, featuring OIDC authentication, real-time leaderboards, AI-powered quiz generation, and a comprehensive REST API.
+
+## Features
+
+<Cards>
+  <Card
+    title="🎯 Quiz Management"
+    description="Create, edit, and delete quizzes with multiple-choice questions"
+  />
+  <Card
+    title="✨ AI Generated Content"
+    description="Use AI to help generate questions and answers"
+  />
+  <Card
+    title="🔎 Image Browser"
+    description="Browse and select images via Unsplash API integration"
+  />
+  <Card title="🔐 OIDC Authentication" description="Secure sign-in via OpenID Connect" />
+  <Card title="👑 Role-Based Access" description="Flexible permissions based on OIDC groups" />
+  <Card title="🏆 Leaderboards" description="Per-quiz and global rankings" />
+  <Card title="⏱️ Timed Quizzes" description="Optional time limits with timeout tracking" />
+  <Card title="🔄 Randomization" description="Shuffle questions for each attempt" />
+  <Card title="🔑 API Keys" description="Programmatic access with scoped permissions" />
+  <Card title="📖 OpenAPI Docs" description="Interactive API documentation with Scalar" />
+  <Card title="🌓 Dark Mode" description="System-aware theme switching" />
+  <Card title="⚡ High Performance" description="Optional Redis/Valkey caching layer" />
+</Cards>
+
+## Tech Stack
+
+- **Monorepo**: Bun workspaces + Turborepo 2.4+
+- **Framework**: Next.js 16 (App Router, Turbopack)
+- **Runtime**: Bun
+- **Database**: PostgreSQL with Drizzle ORM (via `bun:sql`)
+- **Cache**: Valkey/Redis (optional, via Bun native client)
+- **Auth**: BetterAuth with OIDC + API Key plugins
+- **UI**: shadcn/ui (Base UI - Nova), Lucide Icons
+- **Validation**: Zod
+- **AI**: AI SDK with multi-provider support
+- **Images**: Unsplash API integration
+
+## Quick Links
+
+<Cards>
+  <Card
+    title="Getting Started"
+    description="Install and run the app locally"
+    href="/getting-started/installation"
+  />
+  <Card
+    title="Configuration"
+    description="Environment variables and setup"
+    href="/getting-started/configuration"
+  />
+  <Card title="Authentication" description="OIDC provider setup" href="/guides/authentication" />
+  <Card title="API Reference" description="REST API documentation" href="/api-reference/overview" />
+</Cards>
+
+## Prerequisites
+
+- [Bun](https://bun.sh/) >= 1.3.8
+- PostgreSQL database
+- An OIDC provider (e.g., Keycloak, Auth0, Okta, Pocket ID)
+
+## Project Structure
+
+This is a monorepo with:
+
+- **apps/web** — Main Next.js quiz application
+- **apps/docs** — Documentation site (you're reading it!)
+
+All commands should be run from the repository root using Turborepo.
+
+## Support
+
+- **GitHub**: [sebdanielsson/quiz-app](https://github.com/sebdanielsson/quiz-app)
+- **Issues**: [Report a bug](https://github.com/sebdanielsson/quiz-app/issues)
+
+## License
+
+MIT

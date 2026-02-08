@@ -1,0 +1,153 @@
+---
+title: API Authentication
+description: Authenticating API requests
+---
+
+All Quiz App API endpoints require authentication via API key.
+
+## API Key Header
+
+Include your API key in the `x-api-key` header with every request:
+
+```http
+x-api-key: your_api_key_here
+```
+
+## Examples
+
+### cURL
+
+```bash
+curl -H "x-api-key: your_api_key_here" \
+  https://yourapp.com/api/quizzes
+```
+
+### JavaScript (Fetch)
+
+```javascript
+const response = await fetch("https://yourapp.com/api/quizzes", {
+  headers: {
+    "x-api-key": "your_api_key_here",
+    "Content-Type": "application/json",
+  },
+});
+
+const data = await response.json();
+```
+
+### JavaScript (Axios)
+
+```javascript
+import axios from "axios";
+
+const response = await axios.get("https://yourapp.com/api/quizzes", {
+  headers: {
+    "x-api-key": "your_api_key_here",
+  },
+});
+
+const data = response.data;
+```
+
+### Python (Requests)
+
+```python
+import requests
+
+headers = {
+    'x-api-key': 'your_api_key_here',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get('https://yourapp.com/api/quizzes', headers=headers)
+data = response.json()
+```
+
+### Python (httpx)
+
+```python
+import httpx
+
+async with httpx.AsyncClient() as client:
+    response = await client.get(
+        'https://yourapp.com/api/quizzes',
+        headers={'x-api-key': 'your_api_key_here'}
+    )
+    data = response.json()
+```
+
+## Creating API Keys
+
+API keys must be created through the web interface by an administrator. See [API Keys Guide](/features/api-keys) for details.
+
+## Permissions
+
+API keys inherit permissions from the associated user's role. The effective permissions are determined dynamically at request time.
+
+### Available Scopes
+
+| Scope            | Description                         |
+| ---------------- | ----------------------------------- |
+| `quizzes:read`   | List and view quizzes, leaderboards |
+| `quizzes:write`  | Create, update, delete quizzes      |
+| `attempts:read`  | View quiz attempts                  |
+| `attempts:write` | Submit quiz attempts                |
+
+See [RBAC Guide](/guides/rbac) for role and permission configuration.
+
+## Error Responses
+
+### Missing API Key
+
+**Status:** `401 Unauthorized`
+
+```json
+{
+  "error": "API key is required"
+}
+```
+
+### Invalid API Key
+
+**Status:** `401 Unauthorized`
+
+```json
+{
+  "error": "Invalid API key"
+}
+```
+
+### Insufficient Permissions
+
+**Status:** `403 Forbidden`
+
+```json
+{
+  "error": "Insufficient permissions"
+}
+```
+
+### Rate Limit Exceeded
+
+**Status:** `429 Too Many Requests`
+
+```json
+{
+  "error": "Rate limit exceeded. Please try again later."
+}
+```
+
+## Security Best Practices
+
+1. **Never expose API keys** in client-side code or version control
+2. **Use HTTPS** in production to encrypt API keys in transit
+3. **Rotate keys regularly** by deleting old keys and creating new ones
+4. **Set expiration dates** when creating keys
+5. **Monitor usage** through the admin panel
+6. **Use environment variables** to store keys
+
+## Next Steps
+
+- [Endpoints](/api-reference/endpoints) — Explore available endpoints
+- [API Keys Guide](/features/api-keys) — Manage your API keys
+- [Error Handling](/api-reference/errors) — Handle errors gracefully

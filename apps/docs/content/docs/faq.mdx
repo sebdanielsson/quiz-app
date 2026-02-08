@@ -1,0 +1,288 @@
+---
+title: FAQ
+description: Frequently asked questions
+---
+
+## General
+
+### What is the Quiz App?
+
+The Quiz App is a modern, full-stack quiz platform built with Next.js 16. It features OIDC authentication, role-based access control, AI-powered quiz generation, real-time leaderboards, and a comprehensive REST API.
+
+### Is it free to use?
+
+Yes, the Quiz App is open-source and MIT licensed. You can use it for free, modify it, and deploy it anywhere.
+
+### What are the system requirements?
+
+- **Runtime:** Bun >= 1.3.8
+- **Database:** PostgreSQL (any version)
+- **OIDC Provider:** Any standards-compliant provider
+- **Optional:** Redis/Valkey for caching
+
+## Authentication & Permissions
+
+### Which OIDC providers are supported?
+
+Any standards-compliant OIDC provider works:
+
+- Keycloak
+- Auth0
+- Okta
+- Authentik
+- Pocket ID
+- Google Workspace
+- Microsoft Entra ID (Azure AD)
+- And more...
+
+See [Authentication Guide](/guides/authentication) for setup instructions.
+
+### Can I use it without OIDC?
+
+No, OIDC authentication is required. The app doesn't support local username/password accounts.
+
+### How do I make quizzes public?
+
+Enable public access via environment variables:
+
+```bash
+RBAC_PUBLIC_BROWSE_QUIZZES=true
+RBAC_PUBLIC_VIEW_QUIZ=true
+RBAC_PUBLIC_PLAY_QUIZ=true
+RBAC_PUBLIC_LEADERBOARD=true
+```
+
+See [RBAC Guide](/guides/rbac) for details.
+
+### Can guests play quizzes anonymously?
+
+Yes, if `RBAC_PUBLIC_PLAY_QUIZ=true`. Guest attempts are rate-limited and not saved to the database (no user ID to associate).
+
+### How do roles work?
+
+Roles are mapped from OIDC groups via environment variables:
+
+```bash
+RBAC_ROLE_ADMIN_GROUPS=admin,staff
+RBAC_ROLE_CREATOR_GROUPS=teachers
+RBAC_DEFAULT_ROLE=user
+```
+
+Users are assigned the highest priority role that matches their OIDC groups. See [RBAC Guide](/guides/rbac).
+
+### Can I change permissions per role?
+
+Yes, via `RBAC_ROLE_*_PERMISSIONS` environment variables:
+
+```bash
+RBAC_ROLE_USER_PERMISSIONS=quiz:browse,quiz:view,quiz:play,leaderboard:view,leaderboard:submit,ai:quiz-generate
+```
+
+## Features
+
+### How does AI quiz generation work?
+
+The app uses the [AI SDK](https://ai-sdk.dev/) with support for:
+
+- OpenAI (default)
+- Anthropic
+- Google AI
+
+Set your provider and API key:
+
+```bash
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-your-key-here
+```
+
+See [AI Generation Guide](/features/ai-generation).
+
+### Is web search required for AI?
+
+No, web search is optional. Enable it for up-to-date quizzes on recent topics:
+
+```bash
+AI_WEB_SEARCH_ENABLED=true
+```
+
+### How does image search work?
+
+The app integrates with Unsplash API for image selection:
+
+```bash
+UNSPLASH_ACCESS_KEY=your-key-here
+```
+
+See [Image Search Guide](/features/image-search).
+
+### Is caching required?
+
+No, Redis/Valkey caching is optional. The app works without it, but caching significantly improves performance under load.
+
+See [Caching Guide](/features/caching).
+
+### Can I use MySQL instead of PostgreSQL?
+
+No, the app is built specifically for PostgreSQL using Bun's native `bun:sql` driver and Drizzle ORM's PostgreSQL dialect.
+
+### Can I use SQLite?
+
+No, PostgreSQL is required. The app uses PostgreSQL-specific features and Bun's native PostgreSQL driver.
+
+## Deployment
+
+### Where can I deploy it?
+
+The app deploys anywhere that supports:
+
+- Bun runtime (or Node.js with Bun compatibility)
+- PostgreSQL database
+- (Optional) Redis/Valkey
+
+Popular options:
+
+- **Vercel** — Easiest, use Vercel Postgres
+- **Docker** — Included `compose.yaml`
+- **VPS** — Any Linux server with Bun installed
+- **Railway** — Supports Bun and PostgreSQL
+- **Fly.io** — Docker deployments
+
+See [Deployment Guide](/guides/deployment).
+
+### Does it work on Vercel?
+
+Yes! The app is optimized for Vercel. Use:
+
+- **Vercel Postgres** — Managed database
+- **Or Neon/Supabase** — External PostgreSQL
+
+See [Deployment Guide](/guides/deployment#vercel-deployment).
+
+### Can I run it in Docker?
+
+Yes, a `compose.yaml` is included:
+
+```bash
+docker compose up -d
+```
+
+This starts PostgreSQL, Valkey, and the app (if you add a Dockerfile for the app).
+
+### How do I handle migrations in production?
+
+Migrations run automatically during `bun run build`. If you need to run them separately:
+
+```bash
+bun run db:migrate
+```
+
+For zero-downtime deployments, run migrations before deploying the new version.
+
+## API
+
+### How do I get an API key?
+
+API keys must be created by an administrator through the web UI at `/settings`.
+
+See [API Keys Guide](/features/api-keys).
+
+### What can I do with the API?
+
+The API provides full CRUD access to:
+
+- Quizzes (list, get, create, update, delete)
+- Quiz attempts (submit, view results)
+- Leaderboards (per-quiz and global)
+
+See [API Reference](/api-reference/overview).
+
+### Is there a rate limit?
+
+Yes, API keys are rate-limited to **100 requests per minute** by default.
+
+### Can I change the rate limit?
+
+Not currently via configuration. You'd need to modify the code in `apps/web/lib/rate-limit.ts`.
+
+### Is there an SDK?
+
+Not yet, but you can generate one from the OpenAPI spec at `/docs/openapi.json` using tools like:
+
+- [openapi-generator](https://openapi-generator.tech/)
+- [swagger-codegen](https://swagger.io/tools/swagger-codegen/)
+
+## Performance
+
+### How many users can it handle?
+
+The app has been load tested to **5000 concurrent users** with 0% error rate when using Redis/Valkey caching.
+
+See [Testing Guide](/development/testing) for details.
+
+### How can I improve performance?
+
+1. **Enable caching** — Add Redis/Valkey
+2. **Tune PostgreSQL** — Increase connections and memory
+3. **Use connection pooling** — PgBouncer for serverless
+4. **Enable CDN** — For static assets (Vercel does this automatically)
+
+See [Caching Guide](/features/caching).
+
+### What's the difference between Redis and Valkey?
+
+Valkey is an open-source Redis fork. They're compatible — the app supports both via the same `REDIS_URL` variable.
+
+## Development
+
+### How do I contribute?
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+### How do I run tests?
+
+```bash
+bun test
+```
+
+For load testing:
+
+```bash
+bun run loadtest
+```
+
+See [Testing Guide](/development/testing).
+
+### Can I use npm/pnpm/yarn instead of Bun?
+
+Not recommended. The app uses Bun-specific features:
+
+- `bun:sql` — Native PostgreSQL driver
+- Bun's native Redis client
+- Bun workspaces
+
+### Is there a development roadmap?
+
+Check the [GitHub Projects](https://github.com/sebdanielsson/quiz-app/projects) page for upcoming features.
+
+## Troubleshooting
+
+### My question isn't here!
+
+Check:
+
+1. [Troubleshooting Guide](/troubleshooting) — Common issues
+2. [GitHub Issues](https://github.com/sebdanielsson/quiz-app/issues) — Known issues
+3. [GitHub Discussions](https://github.com/sebdanielsson/quiz-app/discussions) — Ask the community
+
+Still stuck? [Create a new issue](https://github.com/sebdanielsson/quiz-app/issues/new).
+
+## Next Steps
+
+- [Getting Started](/getting-started/installation) — Install and run
+- [Configuration](/getting-started/configuration) — Environment variables
+- [Guides](/guides/authentication) — In-depth guides
+- [API Reference](/api-reference/overview) — API documentation

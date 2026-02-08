@@ -1,0 +1,252 @@
+---
+title: Error Handling
+description: Understanding API error responses
+---
+
+The Quiz App API returns consistent error responses for all error conditions.
+
+## Error Response Format
+
+All error responses follow this structure:
+
+```json
+{
+  "error": "Error message describing what went wrong"
+}
+```
+
+The HTTP status code indicates the type of error.
+
+## HTTP Status Codes
+
+| Status Code | Description                                  |
+| ----------- | -------------------------------------------- |
+| `200`       | OK — Request succeeded                       |
+| `201`       | Created — Resource created successfully      |
+| `400`       | Bad Request — Invalid input data             |
+| `401`       | Unauthorized — Missing or invalid API key    |
+| `403`       | Forbidden — Insufficient permissions         |
+| `404`       | Not Found — Resource doesn't exist           |
+| `429`       | Too Many Requests — Rate limit exceeded      |
+| `500`       | Internal Server Error — Something went wrong |
+
+## Common Errors
+
+### 400 Bad Request
+
+**Cause:** Invalid request data or validation errors
+
+**Example Response:**
+
+```json
+{
+  "error": "Invalid quiz data: title is required"
+}
+```
+
+**How to Fix:**
+
+- Check the request body matches the expected format
+- Ensure all required fields are present
+- Validate data types (strings, numbers, booleans)
+- Review the [API Endpoints](/api-reference/endpoints) documentation
+
+### 401 Unauthorized
+
+**Cause:** Missing or invalid API key
+
+**Example Response:**
+
+```json
+{
+  "error": "Invalid API key"
+}
+```
+
+**How to Fix:**
+
+- Ensure `x-api-key` header is included
+- Verify the API key is correct (no extra spaces)
+- Check that the key hasn't been deleted or expired
+- See [API Authentication](/api-reference/authentication)
+
+### 403 Forbidden
+
+**Cause:** Insufficient permissions for the requested operation
+
+**Example Response:**
+
+```json
+{
+  "error": "You don't have permission to create quizzes"
+}
+```
+
+**How to Fix:**
+
+- Check your user role and permissions
+- Verify the API key's associated user has the required role
+- See [RBAC Guide](/guides/rbac) for permission configuration
+- Contact an administrator to adjust permissions
+
+### 404 Not Found
+
+**Cause:** Requested resource doesn't exist
+
+**Example Response:**
+
+```json
+{
+  "error": "Quiz not found"
+}
+```
+
+**How to Fix:**
+
+- Verify the resource ID is correct
+- Check that the resource hasn't been deleted
+- Ensure you have permission to access the resource
+
+### 429 Too Many Requests
+
+**Cause:** Rate limit exceeded
+
+**Example Response:**
+
+```json
+{
+  "error": "Rate limit exceeded. Please try again later."
+}
+```
+
+**Response Headers:**
+
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1640000060
+```
+
+**How to Fix:**
+
+- Wait for the rate limit to reset (check `X-RateLimit-Reset` header)
+- Implement exponential backoff in your client
+- Reduce request frequency
+- Cache responses when possible
+- Consider batching operations
+
+### 500 Internal Server Error
+
+**Cause:** Server-side error
+
+**Example Response:**
+
+```json
+{
+  "error": "An unexpected error occurred"
+}
+```
+
+**How to Fix:**
+
+- Retry the request after a short delay
+- Check the [status page](#) for known issues
+- Report persistent errors to support
+- Include the request ID if provided
+
+## Error Handling Best Practices
+
+### 1. Check Status Codes
+
+Always check the HTTP status code before parsing the response:
+
+```javascript
+const response = await fetch("https://yourapp.com/api/quizzes", {
+  headers: { "x-api-key": apiKey },
+});
+
+if (!response.ok) {
+  const error = await response.json();
+  console.error(`Error ${response.status}: ${error.error}`);
+  return;
+}
+
+const data = await response.json();
+```
+
+### 2. Handle Rate Limits
+
+Implement retry logic with exponential backoff:
+
+```javascript
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    const response = await fetch(url, options);
+
+    if (response.status !== 429) {
+      return response;
+    }
+
+    // Wait before retrying (exponential backoff)
+    const delay = Math.min(1000 * Math.pow(2, i), 10000);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
+  throw new Error("Max retries exceeded");
+}
+```
+
+### 3. Validate Input
+
+Validate data client-side before sending:
+
+```javascript
+function validateQuiz(quiz) {
+  if (!quiz.title || quiz.title.length < 3) {
+    throw new Error("Title must be at least 3 characters");
+  }
+
+  if (!quiz.questions || quiz.questions.length === 0) {
+    throw new Error("Quiz must have at least one question");
+  }
+
+  for (const question of quiz.questions) {
+    if (!question.text) {
+      throw new Error("All questions must have text");
+    }
+
+    const correctCount = question.answers.filter((a) => a.isCorrect).length;
+    if (correctCount !== 1) {
+      throw new Error("Each question must have exactly one correct answer");
+    }
+  }
+}
+```
+
+### 4. Log Errors
+
+Log errors for debugging and monitoring:
+
+```javascript
+try {
+  const response = await fetch("https://yourapp.com/api/quizzes", options);
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error("API Error:", {
+      status: response.status,
+      error: data.error,
+      url: response.url,
+      timestamp: new Date().toISOString(),
+    });
+  }
+} catch (error) {
+  console.error("Network Error:", error);
+}
+```
+
+## Next Steps
+
+- [API Endpoints](/api-reference/endpoints) — Explore available endpoints
+- [API Authentication](/api-reference/authentication) — Learn about authentication
+- [Rate Limiting](/features/api-keys#rate-limiting) — Understand rate limits

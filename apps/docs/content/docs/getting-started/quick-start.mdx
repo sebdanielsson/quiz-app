@@ -1,0 +1,123 @@
+---
+title: Quick Start
+description: Get up and running in 5 minutes
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'; 
+
+This guide will get you up and running with the Quiz App in just a few minutes.
+
+<Steps>
+
+<Step>
+### Clone and Install
+
+```bash
+git clone <repository-url>
+cd quiz-app
+bun install
+```
+</Step>
+
+<Step>
+
+### Start Database
+
+```bash
+docker compose up -d
+```
+
+This starts PostgreSQL and Valkey (optional Redis cache).
+
+</Step>
+<Step>
+
+### Configure Environment
+
+Create `apps/web/.env.local`:
+
+```bash
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Auth (generate secret with: openssl rand -base64 32)
+BETTER_AUTH_SECRET=your-32-character-secret-here
+BETTER_AUTH_URL=http://localhost:3000
+
+# OIDC Provider (example: Keycloak)
+OIDC_ISSUER=https://auth.example.com/realms/your-realm
+OIDC_CLIENT_ID=quiz-app
+OIDC_CLIENT_SECRET=your-client-secret
+
+# Database
+DATABASE_URL=postgresql://quiz_app:strongpassword@localhost:5432/quiz_app
+
+# Optional: Caching
+REDIS_URL=redis://:strongvalkeypassword@localhost:6379
+```
+
+</Step>
+<Step>
+
+### Run Migrations
+
+```bash
+bun run db:migrate
+```
+
+</Step>
+<Step>
+
+### Start Development Server
+
+```bash
+bun run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+</Step>
+</Steps>
+
+## What's Next?
+
+Now that you have the app running:
+
+1. **Sign in** with your OIDC provider
+2. **Configure RBAC** to set up roles and permissions — see [RBAC Guide](/guides/rbac)
+3. **Create your first quiz** at `/quiz/new`
+4. **Explore features**:
+   - [Enable AI quiz generation](/features/ai-generation)
+   - [Set up image search](/features/image-search)
+   - [Configure caching](/features/caching)
+5. **Use the API** — see [API Reference](/api-reference/overview)
+
+## Troubleshooting
+
+### "Database connection failed"
+
+Make sure PostgreSQL is running:
+
+```bash
+docker compose ps
+```
+
+Or check your local PostgreSQL installation:
+
+```bash
+pg_isready
+```
+
+### "OIDC authentication error"
+
+1. Verify your `OIDC_ISSUER` URL is accessible
+2. Check that the callback URL is configured: `http://localhost:3000/api/auth/callback/hogwarts`
+3. Ensure `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` are correct
+
+### "Session not persisting"
+
+Make sure `BETTER_AUTH_SECRET` is set and is at least 32 characters long.
+
+## Production Deployment
+
+Ready to deploy? Check out the [Deployment Guide](/guides/deployment).

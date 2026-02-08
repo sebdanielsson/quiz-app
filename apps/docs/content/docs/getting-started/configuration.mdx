@@ -1,0 +1,126 @@
+---
+title: Configuration
+description: Environment variables and settings
+---
+
+## Required Environment Variables
+
+### App URL
+
+```bash
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+The public URL where the app is hosted. Used for OAuth callbacks and Open Graph metadata.
+
+### Authentication
+
+```bash
+# BetterAuth secret (generate with: openssl rand -base64 32)
+BETTER_AUTH_SECRET=your-super-secret-key-at-least-32-characters
+BETTER_AUTH_URL=http://localhost:3000
+
+# OIDC Provider
+OIDC_ISSUER=https://your-oidc-provider.com
+OIDC_CLIENT_ID=your-client-id
+OIDC_CLIENT_SECRET=your-client-secret
+```
+
+### Database
+
+```bash
+DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
+```
+
+For more database configuration options, see [Database Setup](/guides/database).
+
+## Optional Environment Variables
+
+### Caching (Redis/Valkey)
+
+Enable optional caching layer for better performance:
+
+```bash
+REDIS_URL=redis://:password@localhost:6379
+# or
+VALKEY_URL=redis://:password@localhost:6379
+```
+
+See [Caching Guide](/features/caching) for details.
+
+### AI Quiz Generation
+
+Enable AI-powered quiz generation:
+
+```bash
+AI_PROVIDER=openai
+AI_MODEL=gpt-5-mini
+OPENAI_API_KEY=sk-your-api-key-here
+
+# Optional: Enable web search for up-to-date quizzes
+AI_WEB_SEARCH_ENABLED=true
+```
+
+See [AI Generation](/features/ai-generation) for more providers and configuration.
+
+### Image Search
+
+Enable image picker with Unsplash:
+
+```bash
+UNSPLASH_ACCESS_KEY=your-access-key-here
+```
+
+See [Image Search](/features/image-search) for details.
+
+### RBAC Configuration
+
+Control access permissions and public access:
+
+```bash
+# Public access (allow guests)
+RBAC_PUBLIC_BROWSE_QUIZZES=false
+RBAC_PUBLIC_VIEW_QUIZ=false
+RBAC_PUBLIC_PLAY_QUIZ=false
+RBAC_PUBLIC_LEADERBOARD=false
+
+# Role assignment
+RBAC_DEFAULT_ROLE=user
+RBAC_ROLE_ADMIN_GROUPS=admin
+RBAC_ROLE_MODERATOR_GROUPS=moderators
+RBAC_ROLE_CREATOR_GROUPS=creators,teachers
+```
+
+See [RBAC Guide](/guides/rbac) for complete permission configuration.
+
+### Rate Limiting
+
+Configure rate limits for guest plays and AI generation:
+
+```bash
+# Guest play rate limits (requires RBAC_PUBLIC_PLAY_QUIZ=true)
+RATE_LIMIT_GUEST_PLAYS=5
+RATE_LIMIT_WINDOW_MS=60000
+
+# AI generation rate limits
+RATE_LIMIT_AI_USER=4
+RATE_LIMIT_AI_USER_WINDOW_MS=86400000
+RATE_LIMIT_AI_GLOBAL=10
+RATE_LIMIT_AI_GLOBAL_WINDOW_MS=3600000
+```
+
+## Environment Files
+
+- **`.env.local`** — Local development (git-ignored)
+- **`.env`** — Production (never commit secrets!)
+- **`.env.example`** — Template with all available variables
+
+## Validation
+
+The app validates all environment variables at startup. Missing required variables will cause the app to fail with a helpful error message.
+
+## Next Steps
+
+- [Set up authentication](/guides/authentication)
+- [Configure RBAC](/guides/rbac)
+- [Enable AI features](/features/ai-generation)

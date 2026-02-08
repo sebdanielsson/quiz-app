@@ -1,0 +1,243 @@
+---
+title: Architecture
+description: System architecture and design patterns
+---
+
+## Overview
+
+The Quiz App follows modern Next.js architecture best practices with a focus on server components, server actions, and type safety.
+
+## Technology Stack
+
+### Core Framework
+
+- **Next.js 16** — App Router with React Server Components
+- **React 19** — Server and client components
+- **TypeScript** — Full type safety
+- **Bun** — Fast JavaScript runtime and package manager
+
+### Database & ORM
+
+- **PostgreSQL** — Primary relational database
+- **Drizzle ORM** — Type-safe database queries
+- **`bun:sql`** — Bun's native PostgreSQL driver (zero dependencies)
+
+### Authentication
+
+- **BetterAuth** — Modern authentication library
+- **OIDC Plugin** — Generic OAuth provider support
+- **API Key Plugin** — API authentication with rate limiting
+
+### Caching (Optional)
+
+- **Redis/Valkey** — Optional caching layer
+- **Bun native client** — Zero-dependency Redis client
+- **Cache-aside pattern** — Manual cache invalidation
+
+### UI & Styling
+
+- **shadcn/ui** — Component library (Base UI - Nova variant)
+- **Tailwind CSS 4** — Utility-first styling with CSS variables
+- **Lucide Icons** — Icon library
+- **next-themes** — Dark mode support
+
+### AI & Images
+
+- **AI SDK** — Multi-provider AI integration (OpenAI, Anthropic, Google)
+- **Unsplash API** — Image search and selection
+
+## Project Structure
+
+```
+quiz-app/
+├── apps/
+│   ├── web/                  # Main application
+│   │   ├── app/              # Next.js App Router
+│   │   │   ├── (auth)/       # Auth pages
+│   │   │   ├── (dashboard)/  # Main app pages
+│   │   │   ├── actions/      # Server actions
+│   │   │   └── api/          # API routes
+│   │   ├── components/       # React components
+│   │   ├── lib/              # Core libraries
+│   │   │   ├── auth/         # Authentication
+│   │   │   ├── db/           # Database & queries
+│   │   │   ├── rbac/         # Permissions
+│   │   │   ├── ai/           # AI integration
+│   │   │   ├── cache/        # Caching layer
+│   │   │   └── validations/  # Zod schemas
+│   │   └── public/           # Static assets
+│   └── docs/                 # Documentation site
+├── docs/                     # Shared documentation
+└── package.json              # Workspace root
+```
+
+## Design Patterns
+
+### Server-First Architecture
+
+The app prioritizes server components and server actions for:
+
+- **Performance** — Minimal JavaScript sent to client
+- **Security** — Sensitive logic stays on server
+- **SEO** — Full server-side rendering
+- **DX** — Collocated data fetching
+
+### Database Query Organization
+
+Queries are organized by domain in `lib/db/queries/`:
+
+- `quiz.ts` — Quiz CRUD operations
+- `attempt.ts` — Attempt submission and leaderboards
+- `user.ts` — User management
+
+Each file exports functions like:
+
+```typescript
+export async function getQuizById(id: string) {
+  // Implementation
+}
+
+export async function getQuizzes(options: PaginationOptions) {
+  // Implementation
+}
+```
+
+### Validation with Zod
+
+All input is validated using Zod schemas in `lib/validations/`:
+
+```typescript
+import { z } from "zod";
+
+export const createQuizSchema = z.object({
+  title: z.string().min(3).max(200),
+  description: z.string().max(1000).optional(),
+  questions: z.array(questionSchema).min(1).max(50),
+});
+```
+
+Schemas are reused across:
+
+- Server actions
+- API routes
+- Form validation
+
+### RBAC System
+
+Role-Based Access Control is implemented in `lib/rbac/`:
+
+- **Stateless** — Roles resolved from OIDC groups at request time
+- **Environment-driven** — All configuration via env vars
+- **Permission helpers** — `hasPermission()`, `canEditQuiz()`, etc.
+- **API key inheritance** — Keys inherit user's current permissions
+
+See [RBAC Guide](/guides/rbac) for details.
+
+### Caching Strategy
+
+Optional two-layer caching:
+
+1. **Redis** — Cross-request caching (5-10 minute TTL)
+2. **React `cache()`** — Per-request deduplication
+
+Cache keys follow the pattern:
+
+```
+quizzes:list:{admin|public}:{page}:{limit}
+quizzes:detail:{id}
+leaderboard:quiz:{id}:{page}:{limit}
+leaderboard:global:{page}:{limit}
+```
+
+See [Caching Guide](/features/caching) for details.
+
+### Error Handling
+
+- **Database errors** — Caught and displayed with user-friendly messages
+- **Validation errors** — Returned with specific field errors
+- **API errors** — Consistent JSON error responses
+- **Rate limiting** — 429 responses with retry info
+
+## Data Flow
+
+### Quiz Creation
+
+1. User submits form → `quiz-form.tsx`
+2. Client validates → Zod schema
+3. Server action → `app/actions/quiz.ts`
+4. Permission check → `canCreateQuiz(user)`
+5. Database insert → `createQuiz()`
+6. Cache invalidation → Clear quiz list cache
+7. Redirect → Quiz detail page
+
+### Quiz Attempt Submission
+
+1. User completes quiz → `quiz-player.tsx`
+2. Client submits answers → `app/actions/attempt.ts`
+3. Validate attempt → Check max attempts, time limit
+4. Fetch quiz data → `getCachedQuizById()` (uses cache if available)
+5. Grade answers → Compare with correct answers
+6. Save attempt → `saveQuizAttempt()`
+7. Leaderboard cache expires → TTL-based (no eager invalidation)
+8. Return results → Score, correct answers, leaderboard rank
+
+### API Request
+
+1. Client sends request with API key
+2. API key middleware validates key
+3. Permission check → Resolve user role, check permissions
+4. Rate limit check → 100 req/min per key
+5. Handle request → Call appropriate query function
+6. Return JSON response
+
+## Database Schema
+
+### Core Tables
+
+- **user** — OIDC-synced user accounts
+- **session** — Active sessions
+- **account** — OAuth account links
+- **apikey** — API keys for programmatic access
+
+### Quiz Tables
+
+- **quiz** — Quiz definitions
+- **question** — Questions (cascade delete on quiz delete)
+- **answer** — Answer options (cascade delete on question delete)
+
+### Attempt Tables
+
+- **quiz_attempt** — Completed attempts
+- **attempt_answer** — Individual answers within attempts
+
+All foreign keys use cascade deletes for clean data management.
+
+## Performance Optimizations
+
+1. **Caching** — Optional Redis for frequently accessed data
+2. **Server Components** — Minimize client JavaScript
+3. **Pagination** — All lists use cursor/offset pagination
+4. **Database Indexes** — On frequently queried columns
+5. **Connection Pooling** — Via PgBouncer for serverless (optional)
+6. **Image Optimization** — Next.js automatic image optimization
+
+## Security Measures
+
+1. **OIDC Authentication** — Delegated to identity provider
+2. **Session Encryption** — BetterAuth with secure secrets
+3. **Permission Checks** — On every server action and API route
+4. **Input Validation** — Zod schemas on all inputs
+5. **Rate Limiting** — API keys and guest plays
+6. **SQL Injection Prevention** — Drizzle ORM prepared statements
+7. **CSRF Protection** — Built into Next.js server actions
+
+## Testing
+
+See [Testing Guide](/development/testing) for test strategy and running tests.
+
+## Next Steps
+
+- [Scripts Reference](/development/scripts) — Available commands
+- [Testing](/development/testing) — Test suite overview
+- [RBAC Guide](/guides/rbac) — Permission system
+- [Database Guide](/guides/database) — Schema and queries

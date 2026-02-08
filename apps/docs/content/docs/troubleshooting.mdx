@@ -1,0 +1,560 @@
+---
+title: Troubleshooting
+description: Common issues and solutions
+---
+
+This guide covers common issues you might encounter when setting up or running the Quiz App.
+
+## Installation Issues
+
+### "Bun not found"
+
+**Problem:** The `bun` command is not recognized.
+
+**Solution:**
+
+```bash
+# Install Bun
+curl -fsSL https://bun.sh/install | bash
+
+# Or via npm
+npm install -g bun
+```
+
+Verify installation:
+
+```bash
+bun --version
+```
+
+### "Dependencies failed to install"
+
+**Problem:** `bun install` fails with errors.
+
+**Solutions:**
+
+1. **Clear cache and retry:**
+
+   ```bash
+   rm -rf node_modules bun.lockb
+   bun install
+   ```
+
+2. **Update Bun:**
+
+   ```bash
+   bun upgrade
+   ```
+
+3. **Check Node compatibility:**
+   Ensure you're using a compatible Node.js version (16+) if Bun falls back to Node.
+
+## Database Issues
+
+### "Database connection failed"
+
+**Problem:** App can't connect to PostgreSQL.
+
+**Solutions:**
+
+1. **Check PostgreSQL is running:**
+
+   ```bash
+   # If using Docker
+   docker compose ps
+
+   # Local installation
+   pg_isready
+   ```
+
+2. **Verify DATABASE_URL:**
+
+   ```bash
+   # Correct format
+   DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
+
+   # Not this:
+   DATABASE_URL=postgres://...  # Wrong protocol
+   DATABASE_URL=postgresql://localhost:5432/quiz_app  # Missing credentials
+   ```
+
+3. **Test connection:**
+   ```bash
+   psql $DATABASE_URL
+   ```
+
+### "Database does not exist"
+
+**Problem:** PostgreSQL database hasn't been created.
+
+**Solution:**
+
+```bash
+createdb quiz_app
+
+# Or in psql:
+psql -c "CREATE DATABASE quiz_app;"
+```
+
+### "Migration failed"
+
+**Problem:** Database migrations fail to run.
+
+**Solutions:**
+
+1. **Check database is empty for first migration:**
+
+   ```bash
+   # Reset database (WARNING: deletes all data)
+   dropdb quiz_app
+   createdb quiz_app
+   bun run db:migrate
+   ```
+
+2. **Use db:push for development:**
+
+   ```bash
+   bun run db:push
+   ```
+
+3. **Check migration files:**
+   Ensure `drizzle/pg/` contains valid SQL files.
+
+## Authentication Issues
+
+### "OIDC authentication failed"
+
+**Problem:** Sign-in redirects to error page.
+
+**Solutions:**
+
+1. **Verify OIDC issuer is accessible:**
+
+   ```bash
+   curl https://your-oidc-provider.com/.well-known/openid-configuration
+   ```
+
+2. **Check callback URL configuration:**
+
+   In your OIDC provider, ensure the callback URL is configured:
+
+   ```
+   http://localhost:3000/api/auth/callback/hogwarts
+   ```
+
+3. **Verify credentials:**
+
+   ```bash
+   OIDC_CLIENT_ID=your-client-id
+   OIDC_CLIENT_SECRET=your-client-secret
+   OIDC_ISSUER=https://your-provider.com
+   ```
+
+4. **Check groups claim:**
+
+   If RBAC isn't working, ensure your provider sends a `groups` claim in the ID token.
+
+### "Session not persisting"
+
+**Problem:** User gets logged out on refresh.
+
+**Solutions:**
+
+1. **Check BETTER_AUTH_SECRET is set:**
+
+   ```bash
+   # Generate a secure secret
+   openssl rand -base64 32
+   ```
+
+   Add to `.env.local`:
+
+   ```bash
+   BETTER_AUTH_SECRET=your-generated-secret-here
+   ```
+
+2. **Verify BETTER_AUTH_URL matches app URL:**
+
+   ```bash
+   BETTER_AUTH_URL=http://localhost:3000
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   ```
+
+3. **Check browser cookies:**
+
+   Open DevTools → Application → Cookies. Look for `better-auth.session_token`.
+
+### "User has wrong role"
+
+**Problem:** User doesn't have expected permissions.
+
+**Solutions:**
+
+1. **Check OIDC groups claim:**
+
+   Use a JWT debugger (jwt.io) to inspect the ID token. Look for the `groups` claim.
+
+2. **Verify role mapping:**
+
+   ```bash
+   RBAC_ROLE_ADMIN_GROUPS=admin,staff
+   RBAC_ROLE_CREATOR_GROUPS=teachers
+   ```
+
+3. **Check default role:**
+
+   ```bash
+   RBAC_DEFAULT_ROLE=user
+   ```
+
+4. **Debug role resolution:**
+
+   Add logging in your code:
+
+   ```typescript
+   import { getUserRole, resolveRole } from "@/lib/rbac";
+
+   const { role, source, matchedGroup } = resolveRole(session.user);
+   console.log({ role, source, matchedGroup });
+   ```
+
+See [RBAC Guide](/guides/rbac) for details.
+
+## Development Issues
+
+### "Port 3000 already in use"
+
+**Problem:** Another process is using port 3000.
+
+**Solutions:**
+
+1. **Find and kill the process:**
+
+   ```bash
+   # macOS/Linux
+   lsof -ti:3000 | xargs kill -9
+
+   # Windows
+   netstat -ano | findstr :3000
+   taskkill /PID <PID> /F
+   ```
+
+2. **Use a different port:**
+   ```bash
+   PORT=3001 bun run dev
+   ```
+
+### "Changes not reflecting"
+
+**Problem:** Code changes don't show in the browser.
+
+**Solutions:**
+
+1. **Hard refresh:** Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows)
+
+2. **Clear Next.js cache:**
+
+   ```bash
+   rm -rf .next
+   bun run dev
+   ```
+
+3. **Restart dev server:** Stop (Ctrl+C) and restart
+
+4. **Check you're editing the right file:**
+
+   Remember the monorepo structure:
+   - App code: `apps/web/`
+   - Docs: `apps/docs/`
+
+### "TypeScript errors"
+
+**Problem:** TypeScript shows errors but code works.
+
+**Solutions:**
+
+1. **Restart TypeScript server:**
+
+   In VS Code: Cmd+Shift+P → "Restart TypeScript Server"
+
+2. **Check for multiple TypeScript versions:**
+
+   ```bash
+   bun pm ls typescript
+   ```
+
+3. **Regenerate types:**
+   ```bash
+   bun run tsc --noEmit
+   ```
+
+## API Issues
+
+### "Invalid API key"
+
+**Problem:** API requests return 401 Unauthorized.
+
+**Solutions:**
+
+1. **Check header name:**
+
+   ```bash
+   # Correct
+   curl -H "x-api-key: your_key" ...
+
+   # Incorrect
+   curl -H "Authorization: Bearer your_key" ...
+   ```
+
+2. **Verify key hasn't been deleted:**
+
+   Check `/settings` in the web UI.
+
+3. **Check for whitespace:**
+   ```bash
+   # Trim whitespace
+   export API_KEY="$(echo $API_KEY | xargs)"
+   ```
+
+### "Rate limit exceeded"
+
+**Problem:** Getting 429 responses.
+
+**Solutions:**
+
+1. **Check rate limit headers:**
+
+   ```bash
+   curl -I -H "x-api-key: your_key" https://yourapp.com/api/quizzes
+   ```
+
+   Look for:
+   - `X-RateLimit-Limit`
+   - `X-RateLimit-Remaining`
+   - `X-RateLimit-Reset`
+
+2. **Wait for reset:**
+
+   The `X-RateLimit-Reset` header contains the Unix timestamp when limits reset.
+
+3. **Implement exponential backoff:**
+
+   ```javascript
+   async function fetchWithRetry(url, options, maxRetries = 3) {
+     for (let i = 0; i < maxRetries; i++) {
+       const response = await fetch(url, options);
+
+       if (response.status !== 429) return response;
+
+       const delay = Math.min(1000 * Math.pow(2, i), 10000);
+       await new Promise((resolve) => setTimeout(resolve, delay));
+     }
+     throw new Error("Max retries exceeded");
+   }
+   ```
+
+## Caching Issues
+
+### "Stale data in cache"
+
+**Problem:** Seeing old data even after updates.
+
+**Solutions:**
+
+1. **Flush Redis/Valkey:**
+
+   ```bash
+   docker compose exec valkey redis-cli FLUSHDB
+   ```
+
+2. **Lower TTL values:**
+
+   Edit cache TTL in `apps/web/lib/cache/config.ts`.
+
+3. **Disable caching temporarily:**
+   ```bash
+   # Remove or comment out
+   # REDIS_URL=...
+   ```
+
+### "Cache connection error"
+
+**Problem:** Cache errors in logs.
+
+**Solutions:**
+
+1. **Check Redis/Valkey is running:**
+
+   ```bash
+   docker compose ps valkey
+   ```
+
+2. **Test connection:**
+
+   ```bash
+   docker compose exec valkey redis-cli ping
+   # Should return: PONG
+   ```
+
+3. **Verify REDIS_URL:**
+   ```bash
+   REDIS_URL=redis://:strongvalkeypassword@localhost:6379
+   ```
+
+## AI Generation Issues
+
+### "AI features not configured"
+
+**Problem:** AI quiz generation button is disabled.
+
+**Solutions:**
+
+1. **Set API key:**
+
+   ```bash
+   AI_PROVIDER=openai
+   OPENAI_API_KEY=sk-your-key-here
+   ```
+
+2. **Restart server:**
+
+   ```bash
+   # Stop dev server (Ctrl+C)
+   bun run dev
+   ```
+
+3. **Verify API key is valid:**
+
+   Test at [OpenAI Platform](https://platform.openai.com/)
+
+### "AI rate limit exceeded"
+
+**Problem:** Hit AI generation rate limits.
+
+**Solutions:**
+
+1. **Wait for reset:**
+
+   Check `RATE_LIMIT_AI_USER_WINDOW_MS` (default 24h).
+
+2. **Increase limits (dev only):**
+
+   ```bash
+   RATE_LIMIT_AI_USER=10
+   RATE_LIMIT_AI_GLOBAL=50
+   ```
+
+3. **Check provider limits:**
+
+   OpenAI/Anthropic/Google may have their own rate limits.
+
+## Image Search Issues
+
+### "Image picker disabled"
+
+**Problem:** Can't search for images.
+
+**Solution:**
+
+Set Unsplash API key:
+
+```bash
+UNSPLASH_ACCESS_KEY=your-key-here
+```
+
+Get a key at [Unsplash Developers](https://unsplash.com/developers).
+
+### "Images not loading"
+
+**Problem:** Selected images don't display.
+
+**Solution:**
+
+Add Unsplash to allowed image domains in `next.config.ts`:
+
+```typescript
+images: {
+  remotePatterns: [
+    {
+      protocol: 'https',
+      hostname: 'images.unsplash.com',
+    },
+  ],
+}
+```
+
+## Production Issues
+
+### "Build failed"
+
+**Problem:** `bun run build` fails.
+
+**Solutions:**
+
+1. **Check TypeScript errors:**
+
+   ```bash
+   bun run tsc
+   ```
+
+2. **Fix linting errors:**
+
+   ```bash
+   bun run lint
+   ```
+
+3. **Ensure database is accessible:**
+
+   Build runs migrations, so `DATABASE_URL` must be set.
+
+4. **Use build:only to skip migrations:**
+   ```bash
+   bun run build:only
+   ```
+
+### "App crashes on start"
+
+**Problem:** Production server crashes immediately.
+
+**Solutions:**
+
+1. **Check environment variables:**
+
+   Ensure all required vars are set in production.
+
+2. **Review logs:**
+
+   ```bash
+   # Docker
+   docker compose logs -f web
+
+   # PM2
+   pm2 logs
+
+   # Systemd
+   journalctl -u quiz-app -f
+   ```
+
+3. **Verify database connection:**
+   ```bash
+   psql $DATABASE_URL
+   ```
+
+## Getting Help
+
+If you're still stuck:
+
+1. **Check existing issues:** [GitHub Issues](https://github.com/sebdanielsson/quiz-app/issues)
+2. **Create a new issue:** Include:
+   - Error messages (full stack trace)
+   - Environment (OS, Bun version, Node version)
+   - Steps to reproduce
+   - Relevant configuration (without secrets!)
+3. **Join discussions:** [GitHub Discussions](https://github.com/sebdanielsson/quiz-app/discussions)
+
+## Next Steps
+
+- [Configuration](/getting-started/configuration) — Environment variables
+- [RBAC Guide](/guides/rbac) — Permission configuration
+- [Database Guide](/guides/database) — Database setup
+- [Deployment Guide](/guides/deployment) — Production deployment

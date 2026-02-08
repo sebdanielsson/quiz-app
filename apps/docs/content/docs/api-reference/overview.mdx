@@ -1,0 +1,148 @@
+---
+title: API Overview
+description: Introduction to the Quiz App REST API
+---
+
+The Quiz App provides a comprehensive REST API for programmatic access to all quiz functionality.
+
+## Base URL
+
+```
+https://yourapp.com/api
+```
+
+For local development:
+
+```
+http://localhost:3000/api
+```
+
+## Authentication
+
+All API endpoints require authentication via API key. Include your API key in the `x-api-key` header:
+
+```bash
+curl -H "x-api-key: your_api_key_here" \
+  https://yourapp.com/api/quizzes
+```
+
+See [API Authentication](/api-reference/authentication) for details.
+
+## Interactive Documentation
+
+The Quiz App includes interactive API documentation powered by [Scalar](https://scalar.com/). Access it at:
+
+```
+https://yourapp.com/docs
+```
+
+The interactive docs include:
+
+- 📋 **Complete endpoint reference** with request/response schemas
+- 🧪 **"Try it" functionality** to test endpoints in your browser
+- 📦 **Code snippets** in multiple languages (JavaScript, Python, cURL, etc.)
+- 🔐 **API key configuration** for testing
+
+## API Features
+
+- **RESTful design** — Standard HTTP methods (GET, POST, PUT, DELETE)
+- **JSON responses** — All responses use JSON format
+- **Pagination** — List endpoints support `page` and `limit` parameters
+- **Rate limiting** — 100 requests per minute per API key
+- **Error handling** — Consistent error responses with HTTP status codes
+- **OpenAPI 3.1 spec** — Full machine-readable API specification
+
+## Rate Limiting
+
+All API requests are rate-limited to **100 requests per minute** per API key.
+
+Rate limit headers are included in every response:
+
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1640000000
+```
+
+When rate-limited, you'll receive a `429 Too Many Requests` response:
+
+```json
+{
+  "error": "Rate limit exceeded. Please try again later."
+}
+```
+
+## Pagination
+
+List endpoints support pagination via query parameters:
+
+- `page` — Page number (1-based, default: 1)
+- `limit` — Items per page (default: 30, max: 100)
+
+Example:
+
+```bash
+curl -H "x-api-key: your_key" \
+  "https://yourapp.com/api/quizzes?page=2&limit=20"
+```
+
+Response includes pagination metadata:
+
+```json
+{
+  "quizzes": [...],
+  "pagination": {
+    "page": 2,
+    "limit": 20,
+    "total": 150,
+    "totalPages": 8
+  }
+}
+```
+
+## Content Type
+
+All requests and responses use `application/json`:
+
+```http
+Content-Type: application/json
+```
+
+Include this header when sending data:
+
+```bash
+curl -X POST \
+  -H "x-api-key: your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"My Quiz"}' \
+  https://yourapp.com/api/quizzes
+```
+
+## CORS
+
+The API supports Cross-Origin Resource Sharing (CORS) for client-side applications. All origins are allowed in development mode. In production, configure allowed origins via environment variables.
+
+## Versioning
+
+The API is currently **unversioned**. Breaking changes will be communicated with a migration guide and deprecation period.
+
+## OpenAPI Specification
+
+The complete OpenAPI 3.1 specification is available at:
+
+```
+https://yourapp.com/docs/openapi.json
+```
+
+Use this for:
+
+- Code generation (client SDKs)
+- API testing tools (Postman, Insomnia)
+- Documentation generation
+
+## Next Steps
+
+- [Authentication](/api-reference/authentication) — Learn how to authenticate
+- [Endpoints](/api-reference/endpoints) — Explore available endpoints
+- [Error Handling](/api-reference/errors) — Understand error responses
+- [API Keys](/features/api-keys) — Create and manage API keys

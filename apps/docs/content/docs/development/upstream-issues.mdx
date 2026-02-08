@@ -1,0 +1,133 @@
+---
+title: Upstream Issues
+description: Known issues with upstream dependencies
+---
+
+This document tracks known issues with upstream dependencies and workarounds applied in the codebase.
+
+## Drizzle ORM: Nested Relational Query Bug
+
+**Status:** Workaround applied, waiting for fix in 1.0.0
+
+### Issue Summary
+
+When using drizzle-orm v0.45.1 with PostgreSQL, nested relational queries (`with` inside `with`) generate invalid SQL syntax, causing runtime errors.
+
+### Error Message
+
+```plaintext
+Error: Failed query: select ... from ("quiz_questions_answers") "quiz_questions_answers" ...
+error: syntax error at or near ")"
+```
+
+The bug causes drizzle to generate `from ("table_alias")` instead of a proper subquery.
+
+### Affected Code Pattern
+
+This pattern triggers the bug:
+
+```typescript
+// ❌ This causes the bug in PostgreSQL
+const quizData = await db.query.quiz.findFirst({
+  where: eq(quiz.id, quizId),
+  with: {
+    author: true,
+    questions: {
+      with: {
+        answers: true, // <-- Nested "with" causes invalid SQL
+      },
+    },
+  },
+});
+```
+
+### Workaround
+
+We rewrote queries to avoid nested `with` by fetching data in multiple queries:
+
+```typescript
+// ✅ Workaround: Fetch in separate queries
+const quizData = await db.query.quiz.findFirst({
+  where: eq(quiz.id, quizId),
+  with: {
+    author: true,
+  },
+});
+
+// Fetch questions separately
+const questions = await db
+  .select()
+  .from(question)
+  .where(eq(question.quizId, quizId))
+  .orderBy(asc(question.order));
+
+// Fetch answers and combine in JavaScript
+const questionIds = questions.map((q) => q.id);
+const answers = await db
+  .select()
+  .from(answer)
+  .where(sql`${answer.questionId} IN ${questionIds}`);
+
+// Group and combine results...
+```
+
+### Affected Files
+
+The following files contain workarounds:
+
+- [lib/db/queries/quiz.ts](https://github.com/sebdanielsson/quiz-app/blob/main/apps/web/lib/db/queries/quiz.ts)
+- [app/actions/attempt.ts](https://github.com/sebdanielsson/quiz-app/blob/main/apps/web/app/actions/attempt.ts)
+- [app/api/quizzes/[id]/attempts/route.ts](https://github.com/sebdanielsson/quiz-app/blob/main/apps/web/app/api/quizzes/%5Bid%5D/attempts/route.ts)
+
+Search for this comment to find all workarounds:
+
+```typescript
+// Note: Uses multiple queries to work around drizzle-orm PostgreSQL syntax bug
+```
+
+### When to Fix
+
+- **Current version**: drizzle-orm v0.45.1
+- **Expected fix**: drizzle-orm v1.0.0 (RQBv2 - Relational Query Builder v2)
+
+The 1.0.0-beta releases include a completely rewritten Relational Query Builder (RQBv2) that should resolve this issue.
+
+### How to Fix
+
+Once drizzle-orm 1.0.0 is released:
+
+1. Update drizzle-orm:
+
+   ```bash
+   bun add drizzle-orm@latest
+   ```
+
+2. Follow the RQBv1 to RQBv2 migration guide:
+   https://orm.drizzle.team/docs/relations-v1-v2
+
+3. Revert the workarounds to use nested `with` queries
+
+4. Test thoroughly with PostgreSQL
+
+5. Delete this document
+
+### References
+
+- [drizzle-orm releases](https://github.com/drizzle-team/drizzle-orm/releases)
+- [RQBv2 migration guide](https://orm.drizzle.team/docs/relations-v1-v2)
+- [RQBv2 documentation](https://orm.drizzle.team/docs/rqb-v2)
+
+## Reporting New Issues
+
+If you discover new upstream issues:
+
+1. Document the issue in this file
+2. Apply a workaround with clear comments in the code
+3. Create a GitHub issue in the upstream repository
+4. Link to the upstream issue from this document
+
+## Next Steps
+
+- [Architecture](/development/architecture) — System architecture
+- [Database Guide](/guides/database) — Database setup
+- [Scripts](/development/scripts) — Available commands

@@ -2,14 +2,17 @@
 
 A modern, full-stack quiz application built with Next.js 16, featuring OIDC authentication, real-time leaderboards, and a comprehensive REST API with API key authentication.
 
-## Monorepo Structure
+## 📚 Documentation
 
-This is a **Bun workspaces + Turborepo monorepo** with:
+**Complete documentation is available at:** [`/docs`](./docs/index.mdx) or online at https://quiz-app-docs.example.com
 
-- **apps/web** — Main Next.js application
-- **apps/docs** — Documentation site
+Quick links:
 
-All commands should be run from the repository root using Turborepo.
+- [Getting Started](./docs/getting-started/installation.mdx)
+- [Configuration](./docs/getting-started/configuration.mdx)
+- [API Reference](./docs/api-reference/overview.mdx)
+- [RBAC Guide](./docs/guides/rbac.mdx)
+- [Troubleshooting](./docs/troubleshooting.mdx)
 
 ## Features
 
@@ -27,18 +30,18 @@ All commands should be run from the repository root using Turborepo.
 
 ## Tech Stack
 
-- **Monorepo**: Bun workspaces + Turborepo
+- **Monorepo**: Bun workspaces + Turborepo 2.4+
 - **Framework**: Next.js 16 (App Router, Turbopack)
 - **Runtime**: Bun
-- **Database**: PostgreSQL with Drizzle ORM (via bun:sql)
+- **Database**: PostgreSQL with Drizzle ORM (via `bun:sql`)
 - **Cache**: Valkey/Redis (optional, via Bun native client)
 - **Auth**: BetterAuth with OIDC + API Key plugins
 - **UI**: shadcn/ui (Base UI - Nova), Lucide Icons
 - **Validation**: Zod
-- **AI**: AI SDK
-- **Image browser**: Unsplash API integration
+- **AI**: AI SDK with multi-provider support
+- **Images**: Unsplash API integration
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
@@ -49,156 +52,127 @@ All commands should be run from the repository root using Turborepo.
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/sebdanielsson/respondeo.git
-cd respondeo
-
-# Install dependencies
+# Clone and install
+git clone <repository-url>
+cd quiz-app
 bun install
 
-# Set up environment variables
-cp apps/web/.env.example apps/web/.env.local
-```
-
-### Environment Variables
-
-Create a `.env.local` file with the following:
-
-```env
-# App URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# OIDC Configuration
-OIDC_PROVIDER_ID=your-oidc-provider-id
-NEXT_PUBLIC_OIDC_PROVIDER_ID=your-oidc-provider-id # must match OIDC_PROVIDER_ID
-OIDC_ISSUER=https://your-oidc-provider.com
-OIDC_CLIENT_ID=your-client-id
-OIDC_CLIENT_SECRET=your-client-secret
-
-# Database (PostgreSQL required)
-DATABASE_URL=postgresql://respondeo:securepassword@localhost:5432/respondeo
-```
-
-### RBAC Configuration
-
-The app includes a flexible Role-Based Access Control system. See [docs/rbac.md](docs/rbac.md) for full documentation.
-
-**Quick examples:**
-
-```env
-# Public quiz platform (guests can browse, must sign in to play)
-RBAC_PUBLIC_BROWSE_QUIZZES=true
-RBAC_PUBLIC_VIEW_QUIZ=true
-RBAC_PUBLIC_LEADERBOARD=true
-
-# Role mappings (OIDC groups → app roles)
-RBAC_ROLE_ADMIN_GROUPS=admin,staff
-RBAC_ROLE_CREATOR_GROUPS=teachers
-
-# Default role for authenticated users without group mapping
-RBAC_DEFAULT_ROLE=user
-```
-
-| Variable                     | Default   | Description                              |
-| ---------------------------- | --------- | ---------------------------------------- |
-| `RBAC_PUBLIC_BROWSE_QUIZZES` | `false`   | Allow guests to view quiz list           |
-| `RBAC_PUBLIC_VIEW_QUIZ`      | `false`   | Allow guests to view quiz details        |
-| `RBAC_PUBLIC_PLAY_QUIZ`      | `false`   | Allow guests to play (results not saved) |
-| `RBAC_PUBLIC_LEADERBOARD`    | `false`   | Allow guests to view leaderboards        |
-| `RBAC_DEFAULT_ROLE`          | `user`    | Default role for authenticated users     |
-| `RBAC_ROLE_ADMIN_GROUPS`     | `admin`   | OIDC groups that map to admin role       |
-| `RBAC_ROLE_MODERATOR_GROUPS` | _(empty)_ | OIDC groups that map to moderator role   |
-| `RBAC_ROLE_CREATOR_GROUPS`   | _(empty)_ | OIDC groups that map to creator role     |
-
-### Database Setup
-
-The app uses PostgreSQL with Bun's native SQL driver (`bun:sql`).
-
-```bash
-# Start PostgreSQL (via Docker Compose)
+# Start database
 docker compose up -d
+
+# Configure environment
+cp apps/web/.env.example apps/web/.env.local
+# Edit apps/web/.env.local with your settings
 
 # Run migrations
 bun run db:migrate
 
-# Or push schema directly (development)
-bun run db:push
-```
-
-### Caching (Optional)
-
-The app includes an optional Redis/Valkey caching layer to reduce database load for high-traffic deployments. See [docs/caching.md](docs/caching.md) for full documentation. Caching is **opt-in** — if no Redis URL is configured, all queries hit the database directly.
-
-### Development
-
-```bash
 # Start development server
-bun --bun run dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Production
+See [Installation Guide](./docs/getting-started/installation.mdx) for detailed setup instructions.
+
+## Configuration
+
+Minimum required environment variables:
+
+```env
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Auth
+BETTER_AUTH_SECRET=your-32-character-secret
+BETTER_AUTH_URL=http://localhost:3000
+
+# OIDC Provider
+OIDC_ISSUER=https://your-oidc-provider.com
+OIDC_CLIENT_ID=your-client-id
+OIDC_CLIENT_SECRET=your-client-secret
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/quiz_app
+```
+
+See [Configuration Guide](./docs/getting-started/configuration.mdx) for all available options.
+
+## Development
 
 ```bash
-# Build for production
-bun --bun run build
-
-# Start production server
-bun --bun run start
+bun run dev          # Start development server
+bun run build        # Build for production
+bun run start        # Start production server
+bun run tsc          # Type checking
+bun run lint         # Run ESLint
+bun run format       # Format code
+bun run db:migrate   # Run database migrations
+bun run db:studio    # Open Drizzle Studio
+bun test             # Run tests
 ```
+
+See [Scripts Reference](./docs/development/scripts.mdx) for all available commands.
 
 ## Project Structure
 
 ```plaintext
-respondeo/
-├── app/
-│   ├── (auth)/           # Authentication pages
-│   │   └── sign-in/
-│   ├── (dashboard)/      # Main app pages
-│   │   ├── page.tsx      # Quiz list (home)
-│   │   ├── leaderboard/  # Global leaderboard
-│   │   ├── settings/     # Admin API key management
-│   │   └── quiz/
-│   │       ├── new/      # Create quiz
-│   │       └── [id]/     # Quiz detail, edit, play, results
-│   ├── actions/          # Server actions
-│   ├── api/              # REST API endpoints
-│   │   ├── auth/         # BetterAuth handler
-│   │   ├── leaderboard/  # Global leaderboard
-│   │   └── quizzes/      # Quiz CRUD + attempts + leaderboards
-│   └── docs/             # OpenAPI documentation (Scalar)
-├── components/
-│   ├── auth/             # Auth components
-│   ├── layout/           # Header, theme, pagination
-│   ├── quiz/             # Quiz-related components
-│   ├── settings/         # API key manager
-│   └── ui/               # Reusable UI components
-├── docs/
-│   └── rbac.md           # RBAC configuration documentation
-└── lib/
-    ├── auth/             # Auth configuration & helpers
-    ├── db/               # Database schema & queries
-    ├── rbac/             # Role-based access control
-    ├── openapi.ts        # OpenAPI 3.1 specification
-    └── validations/      # Zod schemas
+quiz-app/
+├── apps/
+│   ├── web/              # Main Next.js application
+│   └── docs/             # Fumadocs documentation site
+├── docs/                 # Documentation source (MDX files)
+├── package.json          # Workspace root
+└── turbo.json            # Turborepo configuration
 ```
 
-## REST API
+See [Architecture Guide](./docs/development/architecture.mdx) for detailed system architecture.
 
-The app provides a comprehensive REST API for programmatic access. All endpoints require authentication via API key.
+## API
 
-### Authentication
+The Quiz App provides a comprehensive REST API. Get started:
 
-Include your API key in the `x-api-key` header:
+1. [Create an API key](./docs/features/api-keys.mdx) at `/settings` (admin only)
+2. Include it in the `x-api-key` header
+3. Explore endpoints in the [API Reference](./docs/api-reference/overview.mdx)
+
+Interactive API documentation available at `/docs` when running the app.
+
+## Deployment
+
+The app can be deployed to:
+
+- **Vercel** — Easiest, with Vercel Postgres
+- **Docker** — Use included `compose.yaml`
+- **VPS** — Any server with Bun and PostgreSQL
+- **Railway, Fly.io** — Docker-based platforms
+
+See [Deployment Guide](./docs/guides/deployment.mdx) for detailed instructions.
+
+## Documentation
+
+This repository includes a Fumadocs-powered documentation site in `apps/docs/`.
+
+**To run the docs locally:**
 
 ```bash
-curl -H "x-api-key: your_api_key_here" https://yourapp.com/api/quizzes
+bun run dev --filter=docs
 ```
 
-### API Key Management
+Visit http://localhost:3001
 
-Admins can create and manage API keys through the web UI at `/settings`. Each API key can have specific permission scopes:
+All documentation source files are in the `/docs` directory at the repository root.
+
+## License
+
+MIT
+
+## Support
+
+- **Documentation**: [Complete docs](./docs/index.mdx)
+- **GitHub Issues**: [Report bugs](https://github.com/sebdanielsson/quiz-app/issues)
+- **Discussions**: [Ask questions](https://github.com/sebdanielsson/quiz-app/discussions)
+- **Troubleshooting**: [Common issues](./docs/troubleshooting.mdx)
 
 | Scope            | Description                                              |
 | ---------------- | -------------------------------------------------------- |

@@ -1,0 +1,139 @@
+---
+title: API Keys
+description: Programmatic access with API keys
+---
+
+The Quiz App provides API keys for programmatic access to the REST API. API keys are managed through the web interface and inherit permissions dynamically from the user's role.
+
+## Creating API Keys
+
+Only administrators can create and manage API keys.
+
+1. Sign in as an admin user
+2. Navigate to **Settings** (`/settings`)
+3. Click **"Create API Key"**
+4. Optionally set an expiration date
+5. Copy the API key (it won't be shown again)
+
+## Using API Keys
+
+Include the API key in the `x-api-key` header with every request:
+
+```bash
+curl -H "x-api-key: your_api_key_here" \
+  https://yourapp.com/api/quizzes
+```
+
+### JavaScript Example
+
+```javascript
+const response = await fetch("https://yourapp.com/api/quizzes", {
+  headers: {
+    "x-api-key": "your_api_key_here",
+    "Content-Type": "application/json",
+  },
+});
+
+const quizzes = await response.json();
+```
+
+### Python Example
+
+```python
+import requests
+
+headers = {
+    'x-api-key': 'your_api_key_here',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get('https://yourapp.com/api/quizzes', headers=headers)
+quizzes = response.json()
+```
+
+## Permissions
+
+API keys inherit permissions from the user's current role dynamically. This means:
+
+- **No stored permissions**: API keys don't have a fixed set of permissions
+- **Real-time updates**: If a user's role permissions change, all their API keys reflect those changes immediately
+- **No regeneration needed**: No need to recreate API keys when permissions change
+
+### Available Scopes
+
+| Scope            | Description                                              |
+| ---------------- | -------------------------------------------------------- |
+| `quizzes:read`   | List and view quizzes, view leaderboards                 |
+| `quizzes:write`  | Create, update, and delete quizzes (requires admin role) |
+| `attempts:read`  | View quiz attempts                                       |
+| `attempts:write` | Submit quiz attempts                                     |
+
+The effective permissions of an API key are determined by the user's role at request time. See [RBAC Guide](/guides/rbac) for role configuration.
+
+## Rate Limiting
+
+API keys are rate-limited to **100 requests per minute** by default.
+
+When rate-limited, the API returns:
+
+```json
+{
+  "error": "Rate limit exceeded. Please try again later."
+}
+```
+
+With HTTP status `429 Too Many Requests`.
+
+### Rate Limit Headers
+
+The API includes rate limit information in response headers:
+
+- `X-RateLimit-Limit` — Total requests allowed per window
+- `X-RateLimit-Remaining` — Remaining requests in current window
+- `X-RateLimit-Reset` — Unix timestamp when the limit resets
+
+## Security Best Practices
+
+1. **Keep keys secret** — Never commit API keys to version control
+2. **Use environment variables** — Store keys in `.env` files (git-ignored)
+3. **Rotate regularly** — Delete old keys and create new ones periodically
+4. **Set expiration** — Use expiration dates when creating keys
+5. **Limit scope** — Ensure users only have necessary permissions
+6. **Monitor usage** — Review API key usage regularly in admin panel
+
+## Deleting API Keys
+
+To delete an API key:
+
+1. Navigate to **Settings** (`/settings`)
+2. Find the key in the list
+3. Click **"Delete"**
+4. Confirm the action
+
+Deleted keys are immediately revoked and cannot be recovered.
+
+## Troubleshooting
+
+### "Invalid API key"
+
+- Verify the key is correct (no extra spaces or characters)
+- Check that the key hasn't been deleted
+- Ensure you're using the `x-api-key` header (not `Authorization`)
+
+### "Insufficient permissions"
+
+- Check the user's role associated with the API key
+- Verify the role has the required permissions
+- See [RBAC Guide](/guides/rbac) for permission configuration
+
+### "Rate limit exceeded"
+
+- Wait for the rate limit window to reset
+- Check the `X-RateLimit-Reset` header for reset time
+- Consider implementing request batching or caching
+
+## Next Steps
+
+- [API Reference](/api-reference/overview) — Explore available endpoints
+- [RBAC Guide](/guides/rbac) — Configure role permissions
+- [OpenAPI Documentation](https://yourapp.com/docs) — Interactive API docs

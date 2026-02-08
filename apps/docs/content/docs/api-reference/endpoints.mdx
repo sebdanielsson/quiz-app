@@ -1,0 +1,302 @@
+---
+title: API Endpoints
+description: Complete API endpoint reference
+---
+
+## Quizzes
+
+### List Quizzes
+
+Get a paginated list of quizzes.
+
+```http
+GET /api/quizzes
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Default | Description              |
+| --------- | ------- | ------- | ------------------------ |
+| `page`    | integer | `1`     | Page number              |
+| `limit`   | integer | `30`    | Items per page (max 100) |
+
+**Response:**
+
+```json
+{
+  "quizzes": [
+    {
+      "id": "quiz_123",
+      "title": "World Geography",
+      "description": "Test your knowledge of world geography",
+      "heroImageUrl": "https://example.com/image.jpg",
+      "authorId": "user_456",
+      "maxAttempts": 3,
+      "timeLimitSeconds": 600,
+      "randomizeQuestions": true,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 30,
+    "total": 42,
+    "totalPages": 2
+  }
+}
+```
+
+### Get Quiz
+
+Get a single quiz with all questions and answers.
+
+```http
+GET /api/quizzes/:id
+```
+
+**Response:**
+
+```json
+{
+  "id": "quiz_123",
+  "title": "World Geography",
+  "description": "Test your knowledge of world geography",
+  "heroImageUrl": "https://example.com/image.jpg",
+  "authorId": "user_456",
+  "author": {
+    "id": "user_456",
+    "displayName": "John Doe",
+    "image": "https://example.com/avatar.jpg"
+  },
+  "maxAttempts": 3,
+  "timeLimitSeconds": 600,
+  "randomizeQuestions": true,
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "questions": [
+    {
+      "id": "q_789",
+      "text": "What is the capital of France?",
+      "imageUrl": null,
+      "order": 0,
+      "answers": [
+        {
+          "id": "a_101",
+          "text": "Paris",
+          "isCorrect": true
+        },
+        {
+          "id": "a_102",
+          "text": "London",
+          "isCorrect": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Create Quiz
+
+Create a new quiz (requires `quizzes:write` permission).
+
+```http
+POST /api/quizzes
+```
+
+**Request Body:**
+
+```json
+{
+  "title": "World Geography",
+  "description": "Test your knowledge of world geography",
+  "heroImageUrl": "https://example.com/image.jpg",
+  "maxAttempts": 3,
+  "timeLimitSeconds": 600,
+  "randomizeQuestions": true,
+  "questions": [
+    {
+      "text": "What is the capital of France?",
+      "imageUrl": null,
+      "answers": [
+        { "text": "Paris", "isCorrect": true },
+        { "text": "London", "isCorrect": false },
+        { "text": "Berlin", "isCorrect": false },
+        { "text": "Madrid", "isCorrect": false }
+      ]
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "quiz_123",
+  "title": "World Geography",
+  ...
+}
+```
+
+### Update Quiz
+
+Update an existing quiz (requires `quizzes:write` permission).
+
+```http
+PUT /api/quizzes/:id
+```
+
+**Request Body:** Same as Create Quiz
+
+### Delete Quiz
+
+Delete a quiz (requires `quizzes:write` permission).
+
+```http
+DELETE /api/quizzes/:id
+```
+
+**Response:**
+
+```json
+{
+  "message": "Quiz deleted successfully"
+}
+```
+
+## Quiz Attempts
+
+### Submit Attempt
+
+Submit a quiz attempt.
+
+```http
+POST /api/quizzes/:id/attempts
+```
+
+**Request Body:**
+
+```json
+{
+  "answers": [
+    {
+      "questionId": "q_789",
+      "answerId": "a_101"
+    }
+  ],
+  "totalTimeMs": 45000,
+  "timedOut": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "attemptId": "attempt_999",
+  "correctCount": 8,
+  "totalQuestions": 10,
+  "percentage": 80,
+  "passed": true,
+  "totalTimeMs": 45000,
+  "answers": [
+    {
+      "questionId": "q_789",
+      "answerId": "a_101",
+      "isCorrect": true,
+      "correctAnswerId": "a_101"
+    }
+  ]
+}
+```
+
+### Get Quiz Leaderboard
+
+Get the leaderboard for a specific quiz.
+
+```http
+GET /api/quizzes/:id/leaderboard
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Default | Description    |
+| --------- | ------- | ------- | -------------- |
+| `page`    | integer | `1`     | Page number    |
+| `limit`   | integer | `30`    | Items per page |
+
+**Response:**
+
+```json
+{
+  "leaderboard": [
+    {
+      "rank": 1,
+      "userId": "user_456",
+      "displayName": "John Doe",
+      "image": "https://example.com/avatar.jpg",
+      "correctCount": 10,
+      "totalQuestions": 10,
+      "percentage": 100,
+      "totalTimeMs": 30000,
+      "completedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 30,
+    "total": 42,
+    "totalPages": 2
+  }
+}
+```
+
+## Global Leaderboard
+
+### Get Global Leaderboard
+
+Get the global leaderboard across all quizzes.
+
+```http
+GET /api/leaderboard
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Default | Description    |
+| --------- | ------- | ------- | -------------- |
+| `page`    | integer | `1`     | Page number    |
+| `limit`   | integer | `30`    | Items per page |
+
+**Response:**
+
+```json
+{
+  "leaderboard": [
+    {
+      "rank": 1,
+      "userId": "user_456",
+      "displayName": "John Doe",
+      "image": "https://example.com/avatar.jpg",
+      "totalAttempts": 15,
+      "averageScore": 92.5,
+      "totalCorrect": 138,
+      "totalQuestions": 150
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 30,
+    "total": 100,
+    "totalPages": 4
+  }
+}
+```
+
+## Next Steps
+
+- [API Authentication](/api-reference/authentication) — Learn about authentication
+- [Error Handling](/api-reference/errors) — Handle errors gracefully
+- [Interactive Docs](https://yourapp.com/docs) — Try the API in your browser
