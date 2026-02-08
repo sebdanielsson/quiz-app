@@ -18,7 +18,7 @@ function SignInContent() {
   // Validate provider ID is configured
   if (!providerId) {
     return (
-      <div className="from-background to-muted flex min-h-screen items-center justify-center bg-gradient-to-br">
+      <div className="from-background to-muted flex min-h-screen items-center justify-center bg-linear-to-br">
         <Card className="mx-4 w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mb-4 flex justify-center">
