@@ -1,0 +1,6 @@
+src/
+tsconfig.json
+test-local.sh
+.gitignore
+*.md
+!README.md
