@@ -78,7 +78,7 @@ export function UserButton({ isAdmin = false, isLoggedIn = false }: UserButtonPr
         <DropdownMenuSeparator />
         {isAdmin && (
           <DropdownMenuGroup>
-            <a href="/docs" target="_blank" rel="noopener noreferrer">
+            <a href="https://docs.respondeo.app" target="_blank" rel="noopener noreferrer">
               <DropdownMenuItem className="cursor-pointer">
                 <Book className="h-4 w-4" />
                 Docs
