@@ -1,6 +1,6 @@
 ---
 title: "Changelog: Documentation Site Launch"
-description: Welcome to the Quiz App documentation
+description: Welcome to Respondeo documentation
 ---
 
 **Date:** February 2, 2026  

@@ -3,7 +3,7 @@ title: API Keys
 description: Programmatic access with API keys
 ---
 
-The Quiz App provides API keys for programmatic access to the REST API. API keys are managed through the web interface and inherit permissions dynamically from the user's role.
+Respondeo provides API keys for programmatic access to the REST API. API keys are managed through the web interface and inherit permissions dynamically from the user's role.
 
 ## Creating API Keys
 
@@ -21,13 +21,13 @@ Include the API key in the `x-api-key` header with every request:
 
 ```bash
 curl -H "x-api-key: your_api_key_here" \
-  https://yourapp.com/api/quizzes
+  https://respondeo.example.com/api/quizzes
 ```
 
 ### JavaScript Example
 
 ```javascript
-const response = await fetch("https://yourapp.com/api/quizzes", {
+const response = await fetch("https://respondeo.example.com/api/quizzes", {
   headers: {
     "x-api-key": "your_api_key_here",
     "Content-Type": "application/json",
@@ -47,7 +47,7 @@ headers = {
     'Content-Type': 'application/json'
 }
 
-response = requests.get('https://yourapp.com/api/quizzes', headers=headers)
+response = requests.get('https://respondeo.example.com/api/quizzes', headers=headers)
 quizzes = response.json()
 ```
 
@@ -136,4 +136,4 @@ Deleted keys are immediately revoked and cannot be recovered.
 
 - [API Reference](/api-reference/overview) — Explore available endpoints
 - [RBAC Guide](/guides/rbac) — Configure role permissions
-- [OpenAPI Documentation](https://yourapp.com/docs) — Interactive API docs
+- [OpenAPI Documentation](https://respondeo.example.com/docs) — Interactive API docs

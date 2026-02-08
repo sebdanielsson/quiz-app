@@ -130,7 +130,7 @@ See [Architecture Guide](./docs/development/architecture.mdx) for detailed syste
 
 ## API
 
-The Quiz App provides a comprehensive REST API. Get started:
+Respondeo provides a comprehensive REST API. Get started:
 
 1. [Create an API key](./docs/features/api-keys.mdx) at `/settings` (admin only)
 2. Include it in the `x-api-key` header

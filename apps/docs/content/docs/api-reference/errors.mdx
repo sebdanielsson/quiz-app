@@ -3,7 +3,7 @@ title: Error Handling
 description: Understanding API error responses
 ---
 
-The Quiz App API returns consistent error responses for all error conditions.
+Respondeo API returns consistent error responses for all error conditions.
 
 ## Error Response Format
 
@@ -161,7 +161,7 @@ X-RateLimit-Reset: 1640000060
 Always check the HTTP status code before parsing the response:
 
 ```javascript
-const response = await fetch("https://yourapp.com/api/quizzes", {
+const response = await fetch("https://respondeo.example.com/api/quizzes", {
   headers: { "x-api-key": apiKey },
 });
 
@@ -229,7 +229,7 @@ Log errors for debugging and monitoring:
 
 ```javascript
 try {
-  const response = await fetch("https://yourapp.com/api/quizzes", options);
+  const response = await fetch("https://respondeo.example.com/api/quizzes", options);
   const data = await response.json();
 
   if (!response.ok) {

@@ -3,7 +3,7 @@ title: API Authentication
 description: Authenticating API requests
 ---
 
-All Quiz App API endpoints require authentication via API key.
+All Respondeo API endpoints require authentication via API key.
 
 ## API Key Header
 
@@ -19,13 +19,13 @@ x-api-key: your_api_key_here
 
 ```bash
 curl -H "x-api-key: your_api_key_here" \
-  https://yourapp.com/api/quizzes
+  https://respondeo.example.com/api/quizzes
 ```
 
 ### JavaScript (Fetch)
 
 ```javascript
-const response = await fetch("https://yourapp.com/api/quizzes", {
+const response = await fetch("https://respondeo.example.com/api/quizzes", {
   headers: {
     "x-api-key": "your_api_key_here",
     "Content-Type": "application/json",
@@ -40,7 +40,7 @@ const data = await response.json();
 ```javascript
 import axios from "axios";
 
-const response = await axios.get("https://yourapp.com/api/quizzes", {
+const response = await axios.get("https://respondeo.example.com/api/quizzes", {
   headers: {
     "x-api-key": "your_api_key_here",
   },
@@ -59,7 +59,7 @@ headers = {
     'Content-Type': 'application/json'
 }
 
-response = requests.get('https://yourapp.com/api/quizzes', headers=headers)
+response = requests.get('https://respondeo.example.com/api/quizzes', headers=headers)
 data = response.json()
 ```
 
@@ -70,7 +70,7 @@ import httpx
 
 async with httpx.AsyncClient() as client:
     response = await client.get(
-        'https://yourapp.com/api/quizzes',
+        'https://respondeo.example.com/api/quizzes',
         headers={'x-api-key': 'your_api_key_here'}
     )
     data = response.json()
