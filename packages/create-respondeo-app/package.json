@@ -14,10 +14,12 @@
   "author": "Sebastian Danielsson",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sebdanielsson/respondeo.git",
+    "url": "git+https://github.com/sebdanielsson/respondeo.git",
     "directory": "packages/create-respondeo-app"
   },
-  "bin": "./dist/index.js",
+  "bin": {
+    "create-respondeo-app": "dist/index.js"
+  },
   "files": [
     "dist",
     "src"
