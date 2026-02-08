@@ -202,7 +202,7 @@ export const db = drizzle({ client, schema });
 
 - **Bun-Specific**: This project requires Bun runtime. Use `bun --bun run` prefix for scripts to avoid Node.js fallback.
 - **Database Required**: `DATABASE_URL` must be set (except during production build phase).
-- **OIDC Required**: `OIDC_PROVIDER_ID`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` required for authentication.
+- **OIDC Required**: `OIDC_PROVIDER_ID`, `NEXT_PUBLIC_OIDC_PROVIDER_ID` (must match `OIDC_PROVIDER_ID`), `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` required for authentication.
 - **Migrations in Build**: Production builds run `db:migrate` automatically. Use `build:only` to skip migrations.
 - **Cache Optional**: Redis/Valkey caching is opt-in. App works without it.
 - **Environment Variables**: See `.env.example` for complete configuration. Most RBAC settings have sensible defaults.
